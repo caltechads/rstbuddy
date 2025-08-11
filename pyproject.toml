@@ -18,11 +18,9 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "License :: OSI Approved :: MIT License",
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-license = {file = "LICENSE.txt"}
 dependencies = [
   "click >= 8.1.7",
   "rich >= 13.8.1",
