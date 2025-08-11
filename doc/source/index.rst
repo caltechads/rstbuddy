@@ -53,12 +53,12 @@ rstbuddy provides the following key features:
     - **Smart Scanning**: Ignores links inside code blocks and code-like directives while preserving admonitions
 
 **RST File Cleaning & Fixing**
-    - **Markdown Conversion**: Convert Markdown ATX headings (``#``, ``##``, ``###``) to RST format
+    - **Markdown Conversion**: Convert Markdown constructs (sometimes left by AI assistants) (``#``, ``##``, ``###``) to RST format
     - **Heading Normalization**: Fix RST heading underlines to match title length exactly
     - **Code Block Conversion**: Transform fenced Markdown code blocks to RST code-block directives
     - **Inline Code Spans**: Convert single-backtick spans to RST inline literals
     - **List Spacing**: Ensure proper blank lines after list blocks
-    - **Stray Fence Removal**: Clean up orphaned triple backticks
+    - **Stray Markdown Fence Removal**: Clean up orphaned triple backticks
 
 **AI-Powered Summarization** (Optional)
     - **RST to Markdown Conversion**: Convert RST files to Markdown using Pandoc
@@ -85,7 +85,7 @@ rstbuddy helps you maintain your RST documentation by:
 
 **Checking Links for valid paths/references/URLs**
     - External HTTP(S) URLs
-    - Sphinx cross-references (``:ref:`label``)
+    - Sphinx cross-references (``:ref:`label```)
     - Document references (``:doc:`path```)
     - Include directives (``.. include:: file``)
     - Code inclusion (``.. literalinclude:: file``)
@@ -107,15 +107,15 @@ rstbuddy helps you maintain your RST documentation by:
     rstbuddy will convert the following markdown constructs to RST:
 
     - ATX headings (``#``, ``##``, ``###``) → RST headings
-    - Fenced code blocks (`` ```  ``) → RST code-block directives
-    - Inline code (``.. code-block::``) → RST inline literals
+    - Markdown fenced code blocks → RST code-block directives
+    - Inline code → RST inline literals
 
 Requirements
 ------------
 
 - Python 3.11 or later
-- Pandoc (for AI summarization feature)
-- OpenAI API key (for AI summarization feature)
+- (optional) Pandoc (for AI summarization feature)
+- (optional) OpenAI API key (for AI summarization feature)
 
 Common Use Cases
 ----------------
