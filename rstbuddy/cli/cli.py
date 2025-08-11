@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 from importlib.metadata import Distribution
-from unittest.mock import Mock
 
 import click
 from rich.table import Table
@@ -12,7 +12,7 @@ from rich.table import Table
 import rstbuddy
 
 from ..settings import Settings
-from .utils import console, print_error, print_info, print_success
+from .utils import console, create_progress, print_error, print_info, print_success
 
 
 @click.group()
@@ -69,15 +69,7 @@ def cli(
             "print_success": print_success,
             "print_header": lambda msg: print_info(f"=== {msg} ==="),
             "print_warning": lambda msg: print_info(f"Warning: {msg}"),
-            "show_progress": lambda desc: type(
-                "Progress",
-                (),
-                {
-                    "__enter__": lambda self: self,
-                    "__exit__": lambda self, *args: None,
-                    "add_task": lambda self, desc, total: Mock(),
-                },
-            )(),
+            "show_progress": create_progress,
         },
     )()
 
@@ -100,8 +92,23 @@ def version(ctx: click.Context) -> None:
     table.add_column("Version", justify="left", style="yellow", no_wrap=True)
 
     table.add_row("rstbuddy", str(rstbuddy.__version__))
-    table.add_row("click", str(click.__version__))
+    table.add_row("python", str(sys.version))
+    table.add_row("click", str(Distribution.from_name("click").version))
     table.add_row("rich", str(Distribution.from_name("rich").version))
+    table.add_row("openai", str(Distribution.from_name("openai").version))
+    table.add_row("mdformat", str(Distribution.from_name("mdformat").version))
+
+    # Get pandoc version
+    try:
+        pandoc_version = (
+            subprocess.check_output(["pandoc", "--version"])
+            .decode("utf-8")
+            .split("\n")[0]
+            .split(" ")[1]
+        )
+        table.add_row("pandoc", pandoc_version)
+    except subprocess.CalledProcessError:
+        table.add_row("pandoc", "not found")
 
     output_console.print(table)
 
