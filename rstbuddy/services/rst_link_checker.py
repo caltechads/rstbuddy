@@ -357,6 +357,7 @@ class RSTLinkChecker:
 
         Returns:
             List of extracted links/URLs
+
         """
         links = []
 
@@ -443,7 +444,7 @@ class RSTLinkChecker:
         return candidates
 
     # ---- Main API
-    def check(
+    def check(  # noqa: PLR0912
         self,
         timeout: int = 5,
         max_workers: int = 8,

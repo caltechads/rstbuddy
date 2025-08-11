@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-import tempfile
-from pathlib import Path
+import socket
 from unittest.mock import Mock, patch
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse, urlunparse
-from urllib.robotparser import RobotFileParser
-from urllib.request import Request, urlopen
 
 import pytest
-from rstbuddy.exc import ConversionError
+
 from rstbuddy.services.rst_link_checker import RSTLinkChecker
 
 
@@ -161,11 +157,11 @@ Content after directive.
         checker = RSTLinkChecker(tmp_path)
 
         # Test title format: :ref:`Title <label>`
-        result = checker._extract_ref_label(":ref:`My Title <my_label>`")
+        result = checker._extract_ref_label(":ref:`My Title <my_label>`")  # noqa: SLF001
         assert result == "my_label"
 
         # Test with extra whitespace
-        result = checker._extract_ref_label(":ref:`  My Title  <  my_label  >  `")
+        result = checker._extract_ref_label(":ref:`  My Title  <  my_label  >  `")  # noqa: SLF001
         assert result == "my_label"
 
     def test_extract_ref_label_with_invalid_formats(self, tmp_path):
@@ -173,20 +169,20 @@ Content after directive.
         checker = RSTLinkChecker(tmp_path)
 
         # Test invalid formats that should return None
-        assert checker._extract_ref_label(":ref:`invalid format") is None
-        assert checker._extract_ref_label(":ref:`Title <label> extra`") is None
-        assert checker._extract_ref_label("not a ref") is None
+        assert checker._extract_ref_label(":ref:`invalid format") is None  # noqa: SLF001
+        assert checker._extract_ref_label(":ref:`Title <label> extra`") is None  # noqa: SLF001
+        assert checker._extract_ref_label("not a ref") is None  # noqa: SLF001
 
     def test_extract_doc_target_with_title_format(self, tmp_path):
         """Test _extract_doc_target with title format."""
         checker = RSTLinkChecker(tmp_path)
 
         # Test title format: :doc:`Title <path>`
-        result = checker._extract_doc_target(":doc:`My Document <path/to/doc>`")
+        result = checker._extract_doc_target(":doc:`My Document <path/to/doc>`")  # noqa: SLF001
         assert result == "path/to/doc"
 
         # Test with extra whitespace
-        result = checker._extract_doc_target(
+        result = checker._extract_doc_target(  # noqa: SLF001
             ":doc:`  My Document  <  path/to/doc  >  `"
         )
         assert result == "path/to/doc"
@@ -196,9 +192,9 @@ Content after directive.
         checker = RSTLinkChecker(tmp_path)
 
         # Test invalid formats that should return None
-        assert checker._extract_doc_target(":doc:`invalid format") is None
-        assert checker._extract_doc_target(":doc:`Title <path> extra`") is None
-        assert checker._extract_doc_target("not a doc") is None
+        assert checker._extract_doc_target(":doc:`invalid format") is None  # noqa: SLF001
+        assert checker._extract_doc_target(":doc:`Title <path> extra`") is None  # noqa: SLF001
+        assert checker._extract_doc_target("not a doc") is None  # noqa: SLF001
 
     def test_resolve_doc_paths_with_absolute_target(self, tmp_path):
         """Test _resolve_doc_paths with absolute target."""
@@ -217,7 +213,7 @@ Content after directive.
         source_file.touch()
 
         # Test absolute target
-        candidates = checker._resolve_doc_paths(source_file, "/absolute/path")
+        candidates = checker._resolve_doc_paths(source_file, "/absolute/path")  # noqa: SLF001
         assert len(candidates) == 1
         assert str(candidates[0]).endswith("absolute/path.rst")
 
@@ -238,8 +234,8 @@ Content after directive.
         source_file.touch()
 
         # Test relative target
-        candidates = checker._resolve_doc_paths(source_file, "relative/path")
-        assert len(candidates) == 2
+        candidates = checker._resolve_doc_paths(source_file, "relative/path")  # noqa: SLF001
+        assert len(candidates) == 2  # noqa: PLR2004
         # First candidate should be relative to source file
         assert str(candidates[0]).endswith("relative/path.rst")
         # Second candidate should be relative to doc source
@@ -306,7 +302,7 @@ Content after directive.
             assert "robots_disallowed" in csv_output
             # The line should end with empty field for robots_disallowed
             lines = csv_output.strip().split("\n")
-            assert len(lines) == 2  # header + data
+            assert len(lines) == 2  # header + data  # noqa: PLR2004
             data_line = lines[1]
             assert data_line.endswith(",")
 
@@ -358,7 +354,7 @@ Content after directive.
         with patch.object(
             checker, "_check_single_link", side_effect=Exception("Test error")
         ):
-            results = checker._check_links(["https://example.com"])
+            results = checker._check_links(["https://example.com"])  # noqa: SLF001
 
             # Should return LinkStatus with error
             assert len(results) == 1
@@ -371,13 +367,12 @@ Content after directive.
         # Mock the entire _check_single_link method to simulate socket timeout
         with patch.object(checker, "_check_single_link") as mock_check:
             # Mock the method to raise socket.timeout
-            import socket
 
             mock_check.side_effect = socket.timeout("Socket timeout")
 
             # This test is now testing the exception handling in _check_links
             # rather than the internal logic of _check_single_link
-            results = checker._check_links(["https://example.com"])
+            results = checker._check_links(["https://example.com"])  # noqa: SLF001
             assert len(results) == 1
             assert "Socket timeout" in results[0].error
 
@@ -395,8 +390,8 @@ Content after directive.
             mock_result.error = None
             mock_check.return_value = mock_result
 
-            result = checker._check_single_link("https://example.com", 5)
-            assert result.status_code == 200
+            result = checker._check_single_link("https://example.com", 5)  # noqa: SLF001
+            assert result.status_code == 200  # noqa: PLR2004
 
     def test_check_single_link_with_urlerror_fallback(self, tmp_path):
         """Test _check_single_link falls back to GET after HEAD fails with URLError."""
@@ -412,8 +407,8 @@ Content after directive.
             mock_result.error = None
             mock_check.return_value = mock_result
 
-            result = checker._check_single_link("https://example.com", 5)
-            assert result.status_code == 200
+            result = checker._check_single_link("https://example.com", 5)  # noqa: SLF001
+            assert result.status_code == 200  # noqa: PLR2004
 
     def test_check_single_link_with_both_methods_failing(self, tmp_path):
         """Test _check_single_link when both HEAD and GET fail."""
@@ -429,7 +424,7 @@ Content after directive.
             mock_result.error = "Connection failed"
             mock_check.return_value = mock_result
 
-            result = checker._check_single_link(
+            result = checker._check_single_link(  # noqa: SLF001
                 "https://example.com", 5, check_robots=False
             )
             assert result.status_code is None
@@ -450,7 +445,7 @@ Content after directive.
             mock_result.robots_disallowed = True
             mock_check.return_value = mock_result
 
-            result = checker._check_single_link(
+            result = checker._check_single_link(  # noqa: SLF001
                 "https://example.com", 5, check_robots=True
             )
             assert result.robots_disallowed is True
@@ -469,8 +464,8 @@ Content after directive.
             mock_result.error = None
             mock_check.return_value = mock_result
 
-            result = checker._check_single_link("ftp://example.com", 5)
-            assert result.status_code == 400
+            result = checker._check_single_link("ftp://example.com", 5)  # noqa: SLF001
+            assert result.status_code == 400  # noqa: PLR2004
 
     def test_is_disallowed_by_robots_with_http_error(
         self, tmp_path, mock_robot_parser_instance
@@ -483,7 +478,7 @@ Content after directive.
             "url", 404, "Not Found", {}, None
         )
 
-        result = checker._is_disallowed_by_robots("https://example.com", "test-agent")
+        result = checker._is_disallowed_by_robots("https://example.com", "test-agent")  # noqa: SLF001
 
         # Should return False (not disallowed) when robots.txt can't be read
         assert result is False
@@ -497,7 +492,7 @@ Content after directive.
         # Configure the mock parser to simulate an error
         mock_robot_parser_instance.read.side_effect = URLError("Connection failed")
 
-        result = checker._is_disallowed_by_robots("https://example.com", "test-agent")
+        result = checker._is_disallowed_by_robots("https://example.com", "test-agent")  # noqa: SLF001
 
         # Should return False (not disallowed) when robots.txt can't be read
         assert result is False
@@ -510,7 +505,7 @@ Content after directive.
         mock_parser = mock_robotparser.RobotFileParser.return_value
         mock_parser.can_fetch.return_value = False  # Disallowed
 
-        result = checker._is_disallowed_by_robots("https://example.com", "test-agent")
+        result = checker._is_disallowed_by_robots("https://example.com", "test-agent")  # noqa: SLF001
 
         # Should return True (disallowed)
         assert result is True
@@ -548,7 +543,7 @@ Content after directives.
         http, ref, doc = checker.collect_occurrences(test_file)
 
         # Should find external links from all new directives
-        assert len(http) == 6  # 6 directives with external URLs
+        assert len(http) == 6  # 6 directives with external URLs  # noqa: PLR2004
 
         # Check that all expected URLs are found
         urls = [occ.link_text for occ in http]
@@ -622,7 +617,7 @@ Content after directives.
 
         # Should find local paths in doc occurrences for validation
         assert (
-            len(doc) == 9
+            len(doc) == 9  # noqa: PLR2004
         )  # 9 local file paths (8 from directives + 1 from the /local/image.png line)
 
         # Check that all expected local paths are found
@@ -658,7 +653,7 @@ Content after directives.
 
         for directive in directives:
             line = f".. {directive}:: https://example.com/{directive}_file"
-            links = checker._extract_directive_links(line, directive)
+            links = checker._extract_directive_links(line, directive)  # noqa: SLF001
             assert len(links) == 1
             assert links[0] == f"https://example.com/{directive}_file"
 
@@ -668,18 +663,18 @@ Content after directives.
 
         # Test with extra whitespace
         line = "   ..   literalinclude::    https://example.com/file.py   "
-        links = checker._extract_directive_links(line, "literalinclude")
+        links = checker._extract_directive_links(line, "literalinclude")  # noqa: SLF001
         assert len(links) == 1
         assert links[0] == "https://example.com/file.py"
 
         # Test with no argument
         line = "   ..   literalinclude::   "
-        links = checker._extract_directive_links(line, "literalinclude")
+        links = checker._extract_directive_links(line, "literalinclude")  # noqa: SLF001
         assert len(links) == 0
 
         # Test with non-target directive
         line = "   ..   code-block::   python"
-        links = checker._extract_directive_links(line, "code-block")
+        links = checker._extract_directive_links(line, "code-block")  # noqa: SLF001
         assert len(links) == 0
 
     def test_check_with_new_directives_file_validation(self, tmp_path):
@@ -728,7 +723,7 @@ Content after directives.
 
         # Should find broken links for non-existent files
         assert (
-            len(broken) == 4
+            len(broken) == 4  # noqa: PLR2004
         )  # 4 broken local file references (only non-existent files)
 
         # Check that broken links are reported for missing files

@@ -4,13 +4,7 @@ Tests for the summarize CLI command.
 
 from __future__ import annotations
 
-from unittest.mock import Mock, patch
-
-import pytest
-from click.testing import CliRunner
-
 from rstbuddy.cli.cli import cli
-from rstbuddy.exc import ConfigurationError, ConversionError, NoPandocError
 
 
 class TestSummarizeCommand:

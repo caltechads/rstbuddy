@@ -4,9 +4,8 @@ Tests for CLI utilities.
 
 from __future__ import annotations
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-import pytest
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress
@@ -57,7 +56,7 @@ class TestCreateProgress:
 class TestPrintError:
     """Test error printing functions."""
 
-    def test_print_error_basic(self, capsys):
+    def test_print_error_basic(self, capsys):  # noqa: ARG002
         """Test basic error printing."""
         with patch.object(stderr_console, "print") as mock_print:
             print_error("Test error message")
@@ -65,22 +64,23 @@ class TestPrintError:
             call_args = mock_print.call_args[0][0]
             assert isinstance(call_args, Panel)
 
-    def test_print_error_with_suggestions(self, capsys):
+    def test_print_error_with_suggestions(self, capsys):  # noqa: ARG002
         """Test error printing with suggestions."""
         suggestions = ["Fix this", "Try that"]
         with patch.object(stderr_console, "print") as mock_print:
             print_error("Test error", suggestions)
-            # Should be called multiple times: once for error, once for suggestions header, once for each suggestion
-            assert mock_print.call_count >= 2
+            # Should be called multiple times: once for error, once for
+            # suggestions header, once for each suggestion
+            assert mock_print.call_count >= 2  # noqa: PLR2004
 
-    def test_print_error_without_suggestions(self, capsys):
+    def test_print_error_without_suggestions(self, capsys):  # noqa: ARG002
         """Test error printing without suggestions."""
         with patch.object(stderr_console, "print") as mock_print:
             print_error("Test error")
             # Should be called once for error only
             assert mock_print.call_count == 1
 
-    def test_print_error_panel_styling(self, capsys):
+    def test_print_error_panel_styling(self, capsys):  # noqa: ARG002
         """Test error panel has correct styling."""
         with patch.object(stderr_console, "print") as mock_print:
             print_error("Test error")
@@ -92,7 +92,7 @@ class TestPrintError:
 class TestPrintSuccess:
     """Test success printing functions."""
 
-    def test_print_success_basic(self, capsys):
+    def test_print_success_basic(self, capsys):  # noqa: ARG002
         """Test basic success printing."""
         with patch.object(stderr_console, "print") as mock_print:
             print_success("Test success message")
@@ -100,7 +100,7 @@ class TestPrintSuccess:
             call_args = mock_print.call_args[0][0]
             assert isinstance(call_args, Panel)
 
-    def test_print_success_panel_styling(self, capsys):
+    def test_print_success_panel_styling(self, capsys):  # noqa: ARG002
         """Test success panel has correct styling."""
         with patch.object(stderr_console, "print") as mock_print:
             print_success("Test success")
@@ -112,7 +112,7 @@ class TestPrintSuccess:
 class TestPrintInfo:
     """Test info printing functions."""
 
-    def test_print_info_basic(self, capsys):
+    def test_print_info_basic(self, capsys):  # noqa: ARG002
         """Test basic info printing."""
         with patch.object(stderr_console, "print") as mock_print:
             print_info("Test info message")
@@ -120,7 +120,7 @@ class TestPrintInfo:
             call_args = mock_print.call_args[0][0]
             assert isinstance(call_args, Panel)
 
-    def test_print_info_panel_styling(self, capsys):
+    def test_print_info_panel_styling(self, capsys):  # noqa: ARG002
         """Test info panel has correct styling."""
         with patch.object(stderr_console, "print") as mock_print:
             print_info("Test info")

@@ -4,10 +4,7 @@ Extended tests for the RST cleaner service to improve coverage.
 
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import Mock, patch
-
-import pytest
 
 from rstbuddy.models.clean import CleanReport
 from rstbuddy.services.rst_cleaner import RSTCleaner
@@ -125,45 +122,45 @@ class TestRSTCleanerExtended:
         cleaner = RSTCleaner()
 
         # Sphinx comment should not be treated as underline
-        assert not cleaner._is_underline("..")
-        assert not cleaner._is_underline("  ..")
+        assert not cleaner._is_underline("..")  # noqa: SLF001
+        assert not cleaner._is_underline("  ..")  # noqa: SLF001
 
     def test_is_underline_with_backticks(self):
         """Test _is_underline excludes backticks."""
         cleaner = RSTCleaner()
 
         # Backticks should not be treated as underline
-        assert not cleaner._is_underline("```")
-        assert not cleaner._is_underline("``")
+        assert not cleaner._is_underline("```")  # noqa: SLF001
+        assert not cleaner._is_underline("``")  # noqa: SLF001
 
     def test_is_underline_with_valid_characters(self):
         """Test _is_underline with valid underline characters."""
         cleaner = RSTCleaner()
 
         # Valid underline characters
-        assert cleaner._is_underline("====")
-        assert cleaner._is_underline("----")
-        assert cleaner._is_underline("^^^^")
-        assert cleaner._is_underline("~~~~")
-        assert cleaner._is_underline("''''")
-        assert cleaner._is_underline('""""')
-        assert cleaner._is_underline("++++")
-        assert cleaner._is_underline("****")
-        assert cleaner._is_underline("####")
-        assert cleaner._is_underline("<<<<")
-        assert cleaner._is_underline(">>>>")
-        assert cleaner._is_underline("____")
-        assert cleaner._is_underline("::::")
+        assert cleaner._is_underline("====")  # noqa: SLF001
+        assert cleaner._is_underline("----")  # noqa: SLF001
+        assert cleaner._is_underline("^^^^")  # noqa: SLF001
+        assert cleaner._is_underline("~~~~")  # noqa: SLF001
+        assert cleaner._is_underline("''''")  # noqa: SLF001
+        assert cleaner._is_underline('""""')  # noqa: SLF001
+        assert cleaner._is_underline("++++")  # noqa: SLF001
+        assert cleaner._is_underline("****")  # noqa: SLF001
+        assert cleaner._is_underline("####")  # noqa: SLF001
+        assert cleaner._is_underline("<<<<")  # noqa: SLF001
+        assert cleaner._is_underline(">>>>")  # noqa: SLF001
+        assert cleaner._is_underline("____")  # noqa: SLF001
+        assert cleaner._is_underline("::::")  # noqa: SLF001
 
     def test_is_underline_with_invalid_characters(self):
         """Test _is_underline with invalid characters."""
         cleaner = RSTCleaner()
 
         # Invalid characters
-        assert not cleaner._is_underline(".")
-        assert not cleaner._is_underline("abc")
-        assert not cleaner._is_underline("a===")
-        assert not cleaner._is_underline("===a")
+        assert not cleaner._is_underline(".")  # noqa: SLF001
+        assert not cleaner._is_underline("abc")  # noqa: SLF001
+        assert not cleaner._is_underline("a===")  # noqa: SLF001
+        assert not cleaner._is_underline("===a")  # noqa: SLF001
 
     def test_convert_markdown_code_blocks_missing_closing_fence(self):
         """Test code block conversion with missing closing fence."""
@@ -212,7 +209,7 @@ class TestRSTCleanerExtended:
         # Should not convert simple words
         assert "`emphasis`" in cleaned
         assert "`simple`" in cleaned
-        assert report.inline_code_fixed >= 2
+        assert report.inline_code_fixed >= 2  # noqa: PLR2004
 
     def test_remove_stray_fences(self):
         """Test removal of stray fence characters."""
@@ -252,27 +249,27 @@ class TestRSTCleanerExtended:
         cleaner = RSTCleaner()
 
         # Valid list items
-        assert cleaner._is_list_item_line("- item")
-        assert cleaner._is_list_item_line("* item")
-        assert cleaner._is_list_item_line("+ item")
-        assert cleaner._is_list_item_line("1. item")
+        assert cleaner._is_list_item_line("- item")  # noqa: SLF001
+        assert cleaner._is_list_item_line("* item")  # noqa: SLF001
+        assert cleaner._is_list_item_line("+ item")  # noqa: SLF001
+        assert cleaner._is_list_item_line("1. item")  # noqa: SLF001
         # The regex pattern is: r"^(?:\s*)(?:\d+\.|[a-zA-Z]\)|[ivxlcdmIVXLCDM]+\))\s+"
         # So "1) item" should not match - only "1. item" matches
-        assert not cleaner._is_list_item_line("1) item")
-        assert cleaner._is_list_item_line("  - indented item")
-        assert cleaner._is_list_item_line("  * indented item")
+        assert not cleaner._is_list_item_line("1) item")  # noqa: SLF001
+        assert cleaner._is_list_item_line("  - indented item")  # noqa: SLF001
+        assert cleaner._is_list_item_line("  * indented item")  # noqa: SLF001
 
         # Not list items
-        assert not cleaner._is_list_item_line("not a list")
-        assert not cleaner._is_list_item_line("")
-        assert not cleaner._is_list_item_line("  just indented")
+        assert not cleaner._is_list_item_line("not a list")  # noqa: SLF001
+        assert not cleaner._is_list_item_line("")  # noqa: SLF001
+        assert not cleaner._is_list_item_line("  just indented")  # noqa: SLF001
 
     def test_collect_links(self):
         """Test link collection from content."""
         cleaner = RSTCleaner()
         text = "See `link <https://example.com>`_ and `ref`_"
 
-        links = cleaner._collect_links(text.splitlines())
+        links = cleaner._collect_links(text.splitlines())  # noqa: SLF001
 
         # Should collect external links (but not internal references)
         assert any("https://example.com" in link for link in links)
@@ -284,16 +281,16 @@ class TestRSTCleanerExtended:
         cleaner = RSTCleaner()
 
         # Valid directives
-        is_directive, indent = cleaner._is_directive_line(".. code-block:: python")
+        is_directive, indent = cleaner._is_directive_line(".. code-block:: python")  # noqa: SLF001
         assert is_directive
         assert indent == 0
 
-        is_directive, indent = cleaner._is_directive_line("  .. note::")
+        is_directive, indent = cleaner._is_directive_line("  .. note::")  # noqa: SLF001
         assert is_directive
-        assert indent == 2
+        assert indent == 2  # noqa: PLR2004
 
         # Not directives
-        is_directive, indent = cleaner._is_directive_line("not a directive")
+        is_directive, indent = cleaner._is_directive_line("not a directive")  # noqa: SLF001
         assert not is_directive
         assert indent == 0
 
@@ -310,7 +307,7 @@ class TestRSTCleanerExtended:
             "More content",
         ]
 
-        protected = cleaner._compute_protected_mask(text)
+        protected = cleaner._compute_protected_mask(text)  # noqa: SLF001
 
         # Code block content should be protected
         assert protected[1]  # def hello():
@@ -327,7 +324,7 @@ class TestRSTCleanerExtended:
         # Test case 1: Code-block directive followed by content (no blank line)
         text1 = [".. code-block:: python", "    print('hello')"]
 
-        result1 = cleaner._ensure_blank_line_after_code_blocks(text1)
+        result1 = cleaner._ensure_blank_line_after_code_blocks(text1)  # noqa: SLF001
 
         # Should add a blank line after the code-block directive
         assert len(result1) > len(text1)
@@ -337,7 +334,7 @@ class TestRSTCleanerExtended:
         # Test case 2: Already has blank line after code-block directive
         text2 = [".. code-block:: python", "", "    print('hello')"]
 
-        result2 = cleaner._ensure_blank_line_after_code_blocks(text2)
+        result2 = cleaner._ensure_blank_line_after_code_blocks(text2)  # noqa: SLF001
 
         # Should not add another blank line since one already exists
         assert result2 == text2  # No changes needed
@@ -350,7 +347,7 @@ class TestRSTCleanerExtended:
             "    echo 'world'",
         ]
 
-        result3 = cleaner._ensure_blank_line_after_code_blocks(text3)
+        result3 = cleaner._ensure_blank_line_after_code_blocks(text3)  # noqa: SLF001
 
         # Debug output
         print(f"Original text3: {text3}")
@@ -375,7 +372,7 @@ class TestRSTCleanerExtended:
             cleaner = RSTCleaner()
 
             # Should have compiled the regex
-            assert len(cleaner._extra_protected_regexes) == 1
+            assert len(cleaner._extra_protected_regexes) == 1  # noqa: SLF001
 
     def test_cleaner_with_invalid_regex_settings(self):
         """Test RSTCleaner with invalid regex patterns."""
@@ -389,7 +386,7 @@ class TestRSTCleanerExtended:
             cleaner = RSTCleaner()
 
             # Should ignore invalid patterns
-            assert len(cleaner._extra_protected_regexes) == 0
+            assert len(cleaner._extra_protected_regexes) == 0  # noqa: SLF001
 
     def test_cleaner_without_settings(self):
         """Test RSTCleaner without settings."""

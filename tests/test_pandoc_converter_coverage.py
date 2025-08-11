@@ -4,12 +4,12 @@ Tests to cover missing lines in the pandoc converter service.
 
 from __future__ import annotations
 
-import platform
-from unittest.mock import Mock, patch
+from subprocess import CalledProcessError
+from unittest.mock import patch
 
 import pytest
 
-from rstbuddy.exc import ConversionError, NoPandocError
+from rstbuddy.exc import ConversionError
 from rstbuddy.services.pandoc_converter import (
     PandocConverter,
     get_pandoc_installation_instructions,
@@ -29,7 +29,7 @@ class TestGetPandocInstallationInstructions:
 
     def test_get_pandoc_instructions_linux_ubuntu(self):
         """Test installation instructions for Ubuntu/Debian."""
-        with patch("platform.system", return_value="Linux"):
+        with patch("platform.system", return_value="Linux"):  # noqa: SIM117
             with patch("pathlib.Path.open") as mock_open:
                 mock_open.return_value.__enter__.return_value.read.return_value = (
                     "ubuntu"
@@ -40,7 +40,7 @@ class TestGetPandocInstallationInstructions:
 
     def test_get_pandoc_instructions_linux_fedora(self):
         """Test installation instructions for Fedora/RHEL."""
-        with patch("platform.system", return_value="Linux"):
+        with patch("platform.system", return_value="Linux"):  # noqa: SIM117
             with patch("pathlib.Path.open") as mock_open:
                 mock_open.return_value.__enter__.return_value.read.return_value = (
                     "fedora"
@@ -51,7 +51,7 @@ class TestGetPandocInstallationInstructions:
 
     def test_get_pandoc_instructions_linux_generic(self):
         """Test installation instructions for generic Linux."""
-        with patch("platform.system", return_value="Linux"):
+        with patch("platform.system", return_value="Linux"):  # noqa: SIM117
             with patch("pathlib.Path.open", side_effect=FileNotFoundError):
                 instructions = get_pandoc_installation_instructions()
                 assert "Linux" in instructions
@@ -59,7 +59,7 @@ class TestGetPandocInstallationInstructions:
 
     def test_get_pandoc_instructions_linux_unknown_distro(self):
         """Test installation instructions for unknown Linux distribution."""
-        with patch("platform.system", return_value="Linux"):
+        with patch("platform.system", return_value="Linux"):  # noqa: SIM117
             with patch("pathlib.Path.open") as mock_open:
                 mock_open.return_value.__enter__.return_value.read.return_value = (
                     "unknown_distro"
@@ -84,7 +84,7 @@ class TestGetPandocInstallationInstructions:
 
     def test_get_pandoc_instructions_linux_centos(self):
         """Test installation instructions for CentOS."""
-        with patch("platform.system", return_value="Linux"):
+        with patch("platform.system", return_value="Linux"):  # noqa: SIM117
             with patch("pathlib.Path.open") as mock_open:
                 mock_open.return_value.__enter__.return_value.read.return_value = (
                     "centos"
@@ -95,7 +95,7 @@ class TestGetPandocInstallationInstructions:
 
     def test_get_pandoc_instructions_linux_redhat(self):
         """Test installation instructions for RedHat."""
-        with patch("platform.system", return_value="Linux"):
+        with patch("platform.system", return_value="Linux"):  # noqa: SIM117
             with patch("pathlib.Path.open") as mock_open:
                 mock_open.return_value.__enter__.return_value.read.return_value = (
                     "redhat"
@@ -106,7 +106,7 @@ class TestGetPandocInstallationInstructions:
 
     def test_get_pandoc_instructions_linux_amazon(self):
         """Test installation instructions for Amazon Linux."""
-        with patch("platform.system", return_value="Linux"):
+        with patch("platform.system", return_value="Linux"):  # noqa: SIM117
             with patch("pathlib.Path.open") as mock_open:
                 mock_open.return_value.__enter__.return_value.read.return_value = (
                     "amazon"
@@ -128,7 +128,6 @@ class TestPandocConverterErrorHandling:
             converter = PandocConverter()
 
             # Mock the conversion to fail with CalledProcessError
-            from subprocess import CalledProcessError
 
             mock_run.side_effect = CalledProcessError(
                 1, "pandoc", stderr=b"Error message"
@@ -158,15 +157,14 @@ class TestPandocConverterErrorHandling:
             assert "To install pandoc" in str(exc_info.value)
 
     def test_convert_with_pandoc_called_process_error_no_stderr(self):
-        """Test handling of CalledProcessError without stderr in _convert_with_pandoc."""
+        """
+        Test handling of CalledProcessError without stderr in _convert_with_pandoc.
+        """
         with patch("subprocess.run") as mock_run:
             # Mock the version check in __init__
             mock_run.return_value.returncode = 0
 
             converter = PandocConverter()
-
-            # Mock the conversion to fail with CalledProcessError but no stderr
-            from subprocess import CalledProcessError
 
             mock_error = CalledProcessError(1, "pandoc")
             mock_error.stderr = None

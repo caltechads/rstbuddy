@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import pytest
-
 from rstbuddy.main import main
 
 
@@ -24,7 +22,6 @@ class TestMain:
     def test_main_importable(self, mock_cli):
         """Test that main function can be imported and called."""
         # This test ensures the module can be imported without errors
-        from rstbuddy.main import main
 
         main()
         mock_cli.assert_called_once()

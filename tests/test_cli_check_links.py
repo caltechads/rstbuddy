@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import TYPE_CHECKING
 
 from click.testing import CliRunner
@@ -256,9 +257,8 @@ Bad link: https://definitely.invalid.tld/abc
     )
 
     # Change to tmp_path so the default "doc" directory exists
-    import os
 
-    original_cwd = os.getcwd()
+    original_cwd = os.getcwd()  # noqa: PTH109
     os.chdir(tmp_path)
 
     try:
@@ -317,7 +317,7 @@ Title
     data = json.loads(result.output)
 
     # Should find broken links from all new directives
-    assert any(k.endswith("directives.rst") for k in data.keys())
+    assert any(k.endswith("directives.rst") for k in data)
 
     # Check that all expected broken links are found
     directives_file_data = None
@@ -327,7 +327,8 @@ Title
             break
 
     assert directives_file_data is not None
-    assert len(directives_file_data) == 6  # 6 directives with broken links
+    # 6 directives with broken links
+    assert len(directives_file_data) == 6  # noqa: PLR2004
 
     # Verify all expected URLs and local paths are present
     links = [item["link"] for item in directives_file_data]

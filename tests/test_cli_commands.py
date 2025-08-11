@@ -5,10 +5,6 @@ Tests for CLI commands with low coverage.
 from __future__ import annotations
 
 import json
-from unittest.mock import patch
-
-import pytest
-from click.testing import CliRunner
 
 from rstbuddy.cli.cli import cli
 
@@ -112,7 +108,7 @@ class TestCLIErrorHandling:
         """Test CLI without arguments shows help."""
         result = runner.invoke(cli, [])
         # Click expects a command, so exit code 2 is correct for missing command
-        assert result.exit_code == 2
+        assert result.exit_code == 2  # noqa: PLR2004
         assert "Usage:" in result.output
 
     def test_invalid_command(self, runner):
