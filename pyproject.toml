@@ -1,0 +1,194 @@
+[project]
+name = "rstbuddy"
+version = "0.1.0"
+authors = [
+    {name = "Chris Malek", email = "cmalek@caltech.edu"},
+]
+maintainers = [
+    {name = "Chris Malek", email = "cmalek@caltech.edu"},
+]
+requires-python = ">= 3.11"
+description = "A tool for ensuring your strucuredText files are (more) syntactically correct"
+readme = "README.md"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+license = {file = "LICENSE.txt"}
+dependencies = [
+  "click >= 8.1.7",
+  "rich >= 13.8.1",
+  "pydantic >= 2.10.6",
+  "pydantic-settings >= 2.5.2",
+  "build>=1.2.2.post1",
+  "openai>=1.99.6",
+  "mdformat>=0.7.22",
+]
+
+[dependency-groups]
+docs = [
+  "Sphinx>=7",
+  "sphinx_rtd_theme == 2.0.0",
+  "sphinxcontrib-images >= 0.9.4",
+  "setuptools>=75.1.0",
+]
+test = [
+  "pytest>=8.3.4",
+  "pytest-cov>=6.0.0",
+  "pytest-mock>=3.14.0",
+  "pytest-env>=0.8.1",
+  "pytest-timeout>=2.1.0",
+  "pytest-xdist>=3.5.0",
+  "pytest-randomly>=3.12.0",
+  "psutil>=7.0.0",
+]
+
+[project.urls]
+Respository = "https://github.com/caltechads/rstbuddy"
+Documentation = "https://rstbuddy.readthedocs.io"
+Issues = "https://github.com/caltechads/rstbuddy/issues"
+
+[project.scripts]
+rstbuddy = "rstbuddy.main:main"
+
+[tool.uv]
+python-preference = "only-system"
+dev-dependencies = [
+  "icecream>=2.1.5",
+]
+default-groups = ["docs", "test"]
+
+[tool.setuptools]
+# ...
+# By default, include-package-data is true in pyproject.toml, so you do
+# NOT have to specify this line.
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[build-system]
+requires = [
+    "setuptools >= 48",
+    "wheel >= 0.29.0",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.mypy]
+plugins = "pydantic.mypy"
+exclude = "^build"
+
+[[tool.mypy.overrides]]
+module = "setuptools.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sphinx_rtd_theme.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "mdformat.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "openai.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "rstbuddy.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "psutil.*"
+ignore_missing_imports = true
+
+[tool.ruff]
+# Same as Black.
+line-length = 88
+indent-width = 4
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    #### modules
+    "ANN", # flake8-annotations
+    "COM", # flake8-commas
+    "C90", # mccabe complexity
+    "EXE", # flake8-executable
+    "T10", # debugger
+    "TID", # flake8-tidy-imports
+
+    #### specific rules
+    "D100",   # ignore missing docs
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "D200",
+    "D203",
+    "D205",
+    "D212",
+    "D400",
+    "D401",
+    "D415",
+    "E402",   # false positives for local imports
+    "S603",   # ignore subprocess calls that do not check return code
+    "S607",   # ignore subprocess programs that are not absolute paths
+    "TRY003", # external messages in exceptions are too verbose
+    "T201",   # ignore print statements
+    "TD002",
+    "TD003",
+    "FIX002", # too verbose descriptions of todos
+    "SIM102", # combine nested ifs
+    "UP006",  # stop bugging me about modern type hints
+    "FBT001", # stop bugging me about booleans in function signatures
+    "FBT002", # stop bugging me about booleans in function signatures
+    "N818",   # stop bugging me about not ending my exceptions with "Error"
+    "S101",   # stop bugging me about using assert -- we use pytest
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
