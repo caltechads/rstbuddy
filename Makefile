@@ -19,7 +19,7 @@ dist: clean
 	@python -m build --sdist --wheel
 
 compile:
-	@uv pip compile --extra docs pyproject.toml -o requirements.txt
+	@uv pip compile --group=docs pyproject.toml -o requirements.txt
 
 release:
 	@bin/release.sh
