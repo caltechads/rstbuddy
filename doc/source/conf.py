@@ -36,7 +36,7 @@ copyright = "Chris Malek"  # noqa: A001
 author = "Chris Malek"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.0"
+release = "0.2.0"
 
 
 # -- General configuration ---------------------------------------------------

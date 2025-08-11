@@ -77,7 +77,7 @@ Configuration Options
 
 **Application Settings**
     - **app_name**: Application name (default: ``rstbuddy``, readonly)
-    - **app_version**: Application version (default: ``0.1.0``, readonly)
+    - **app_version**: Application version (default: ``0.2.0``, readonly)
 
 **Documentation Settings**
     - **documentation_dir**: Top-level directory for RST files to be processed (default: ``doc/source``)
