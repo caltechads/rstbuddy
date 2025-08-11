@@ -1,0 +1,113 @@
+---
+description: Iterative Plan Development
+globs: []
+keywords: []
+alwaysApply: true
+---
+
+## AI Instructions
+
+**STOP. READ THIS FIRST. This workflow is MANDATORY for AI agents.**
+
+You MUST follow this exact sequence for EVERY task, no exceptions:
+
+1. **READ** the human's prompt completely
+2. **CREATE** a detailed plan for implementation
+3. **ASK** clarifying questions to understand requirements better
+4. **WAIT** for human approval of the plan
+5. **ONLY THEN** begin implementation
+
+**CRITICAL ENFORCEMENT**: You are FORBIDDEN from using ANY of the following tools until you receive explicit approval:
+
+- `edit_file`
+- `search_replace`
+- `run_terminal_cmd`
+- `delete_file`
+- Grepping the codebase for relevant information and web searching for relevant information is allowed.
+
+**VIOLATION CONSEQUENCES**: If you skip this workflow and start implementing immediately, you are:
+
+- Wasting the human's time with potentially incorrect work
+- Missing important context that could change the approach
+- Creating work that may need to be completely redone
+- Failing to follow established best practices
+- **VIOLATING MANDATORY WORKFLOW** - This is a critical error
+
+**Failure to follow this workflow will result in incorrect or incomplete work.**
+
+### **MANDATORY ACKNOWLEDGMENT**
+
+Before proceeding with ANY task, you MUST explicitly acknowledge this workflow by stating:
+
+"I acknowledge that I am supposed to use the following workflow:
+
+1. **READ** the human's prompt completely
+2. **CREATE** a detailed plan for implementation
+3. **ASK** clarifying questions to understand requirements better
+4. **WAIT** for human approval of the plan
+5. **ONLY THEN** begin implementation"
+
+☐ I acknowledge the mandatory workflow above
+
+**Failure to follow this workflow will result in incorrect or incomplete work.**
+
+## Prompt instructions
+
+- **MANDATORY**: We will use an iterative process to develop a plan to implement the human's prompt.
+- **MANDATORY**: After the user has provided a prompt, the AI agent should first read the prompt and then respond with a plan for how it will implement the prompt. It should not start working on the task until the human has approved the plan.
+- **MANDATORY**: You should restate the general instructions for the recipe in your own words. This is about confirming you know how to help the human.
+- **MANDATORY**: Ask any questions of the human to clarify the prompt, or to suggest improvements to the prompt.
+
+## **WORKFLOW CHECKLIST FOR AI AGENTS**
+
+- [ ] **Step 1**: Read and understood the complete prompt
+- [ ] **Step 2**: Created a detailed implementation plan
+- [ ] **Step 3**: Asked clarifying questions about requirements
+- [ ] **Step 4**: Restated the recipe instructions in your own words
+- [ ] **Step 5**: Received explicit approval from the human to proceed
+- [ ] **Step 6**: Confirmed the plan addresses all requirements
+- [ ] **Step 7**: Acknowledged that implementation tools are now permitted
+
+**ONLY proceed to implementation after ALL checkboxes are completed.**
+
+## **VALIDATION PHRASES**
+
+You MUST include one of these phrases in your response to indicate you understand the workflow:
+
+- "I acknowledge the mandatory workflow above"
+- "I understand I must wait for approval before implementation"
+- "I will not use implementation tools until approved"
+
+### **EXAMPLE OF CORRECT WORKFLOW**
+
+When you receive a prompt like "Create a documentation file about X", you should respond like this:
+
+"Thank you for the request. Let me create a plan for implementing this documentation file.
+
+## Plan for Creating Documentation File
+
+1. **Structure**: Create a new .rst file with proper Sphinx formatting
+2. **Content**: Include sections for [list specific sections]
+3. **Format**: Follow the established documentation conventions
+4. **Integration**: Add to the appropriate table of contents
+
+## Clarifying Questions
+
+Before I proceed, I need to understand:
+
+- What specific aspects of X should be covered?
+- Who is the target audience for this documentation?
+- Are there any existing files I should reference or follow as examples?
+
+## Recipe Confirmation
+
+I understand I should follow the documentation recipe which requires:
+
+- Using proper Sphinx formatting
+- Including AI Instructions section
+- Following the established heading hierarchy
+- Adding appropriate cross-references
+
+Please review this plan and let me know if you'd like any adjustments before I begin implementation."
+
+**This is the ONLY acceptable way to respond to a new task request.**

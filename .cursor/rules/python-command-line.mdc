@@ -1,0 +1,138 @@
+---
+description: Python Command Line Tool Coding Standards
+globs: []
+keywords: ['implement python cli', 'implement python command line', 'write', 'click', 'terminal tool', 'python', 'command line', 'command-line', 'console app', 'cli']
+alwaysApply: false
+---
+
+# Python Command Line Tool Coding Standards
+
+In the below, `<project>` is the name of the main python folder in the project.
+
+## Project Structure
+
+The project is organized into the following directories:
+
+- `<project>/`: The main project directory.
+- `doc/source/`: The documentation directory.
+- `doc/source/conf.py`: The sphinx configuration file.
+- `<project>/__main__.py`: The main entry point for the project. This is the file that is run when the user runs `python -m <project>`.
+- `<project>/cli/`: This folder contains the command line interface.
+- `<project>/cli/__init__.py`: See below.
+- `<project>/cli/main.py`: The main entry point for the command line interface.
+- `<project>/cli/utils.py`: The utility functions for the command line interface.
+- `<project>/services/`: Use this folder to store any non cli, non model code that is used by the project.
+- `<project>/exc.py`: The exceptions module. Put any custom exceptions here.
+- `<project>/settings.py`: The settings module. Put pydantic-settings `Settings` classes here.
+- `<project>/types.py`: The types module. Put any custom types here.
+- `tests/`: The tests directory.
+- `tests/fixtures/`: The test fixtures directory.
+- `tests/fixtures/conftest.py`: The globaltest fixtures configuration file.
+- `tests/integration/`: The integration tests directory.
+
+## Settings
+
+- Settings are stored in `<project>.settings.Settings`, which should inherit from `BaseSettings`.
+
+```python
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    ...
+```
+
+- Ensure we can load settings from the environment, and from a `.env` file.
+- Ask the user if they want to support any other ways to load settings. Suggest `toml` files first, then `yaml` files, then `json` files.
+- Use appropriate types for all settings; use the most specific type possible, especially try to pull from the pydantic types.
+- If it is a URL, use `AnyUrl` from pydantic.
+- See the [pydantic API documentation](https://docs.pydantic.dev/latest/api/types/), "Pydantic Types" and "Network Types" section for more options.
+- If the type is a list, remember you must use `Field(default_factory=list)` to initialize the list.
+- If the type is a dict, remember you must use `Field(default_factory=dict)` to initialize the list.
+
+## Models
+
+We often need to create structured models for holding data that is passed between bits of the code internally, or which will be presented to the user.
+
+- Use `pydantic` models for all user facing models -- things we will use in our command line commands.
+- For internal DAO style models (used to pass data between bits of the code internally), you may either use `pydantic` models, `@dataclass` models, or `typing.TypedDict` models.
+- Use appropriate validation for complicated fields
+- Models should be broken out into separate files by logical groupings under `<project>/models/`.
+- Update the `<project>/__init__.py` file to import all the models from the `<project>/models/` folder.
+
+```python
+from .my_model import *  # noqa: F403
+from .main import *  # noqa: F403
+```
+
+## Structuring the command line interface
+
+- Use `click` for CLI implementation with proper command grouping and help text.
+- Use `click.Context` to pass around the commonly used objects; define it in the `<project>/cli/main.py` file.
+- Use `rich` for all output formatting, progress indicators, and user interface elements.
+- Implement global options that apply to all commands:
+  - `--verbose` / `-v`: Enable verbose output with detailed logging
+  - `--quiet` / `-q`: Suppress all output except errors
+  - `--config-file`: Specify custom configuration file path
+  - `--output`: Control output format. See `command_output`{.interpreted-text role="ref"} for more details.
+- Use `rich.progress` for progress indicators on long-running operations.
+- Use `rich.console` for consistent output formatting and error handling.
+- Implement proper error handling with user-friendly error messages and suggestions.
+- Add command aliases and shortcuts for common operations.
+- Use `rich.table` for tabular data output.
+- Use `rich.panel` for highlighting important information.
+- Use `rich.syntax` for syntax highlighting of configuration files and outputs.
+- Implement consistent color schemes and styling across all commands.
+- All error messages and progress indicators should be written to stderr.
+- All desired output should be written to stdout.
+- Put `click.group` definitions and all their commands in `<project>/cli/<group_name>.py`.
+
+```python
+from .main import cli
+
+@click.group("my_group")
+def my_group():
+    ...
+
+@my_group.command("my_command")
+def my_command():
+    ...
+```
+
+- Register the commands with the `click.group` via `<project>/cli/__init__.py`.
+
+```python
+from .main import *  # noqa: F403
+from .my_click_group import *  # noqa: F403
+```
+
+ways add a top level `settings` command that prints the current settings in a human readable format, typically in a 2 column table, where the first column is the setting name and the second column is the setting value. This should be a `click.command` that is defined in `<project>/cli/main.py`.
+
+```python
+# This is in <project>/cli/main.py
+@cli.command("settings")
+    def settings():
+        ...
+```
+
+## Command output {#command_output}
+
+- Use the `rich` package for command line output.
+- Always have a global `--output` option that allows the user to specify the output format, choosing from `json`, `table`, `text`
+- Ask the user if they want other output formats. Suggest `yaml` for non-json output formats.
+
+### CLI Test Guidelines
+
+Use Click's testing utilities for CLI tests:
+
+```python
+from click.testing import CliRunner
+
+def test_aws_services_names_only():
+    """Test aws services command with names-only option."""
+    runner = CliRunner()
+    result = runner.invoke(cli, ['aws', 'services', '--names-only'])
+
+    assert result.exit_code == 0
+    assert 'accessanalyzer' in result.output
+    assert 'account' in result.output
+```

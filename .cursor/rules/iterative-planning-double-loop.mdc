@@ -1,0 +1,162 @@
+---
+description: Iterative Planning with Double-Loop Learning
+globs: []
+keywords: []
+alwaysApply: false
+---
+
+## What is Double-Loop Learning?
+
+Double-loop learning is when the learner is aware of the loop they are in and can step back to question the original goals, values, plans and rules that caused them to start their work. The fundamental ability of double-loop learning is to ask "are we doing the right thing?" rather than "are we doing it the right way?"
+
+This augmentation to the core iterative planning workflow adds specific triggers and decision points that help identify when single-loop learning (optimizing the current approach) should be replaced with double-loop learning (questioning the approach itself).
+
+## Common Single-Loop Learning Failures
+
+Based on real-world experience, here are specific scenarios where single-loop learning fails and double-loop thinking is needed:
+
+1. **Package Discovery Failures**: Re-implementing features that already exist in packages you're already using or could easily integrate
+2. **User Research Failures**: Building features that users don't use because they don't actually solve a problem users have or aren't appropriate for their skill level
+3. **Solution Appropriateness Failures**: Implementing complex solutions for simple problems, or choosing the wrong technology stack for the use case
+4. **Scope Creep Failures**: Continuing to add features to a solution that should be simplified or replaced entirely
+
+## Double-Loop Learning Triggers
+
+**MANDATORY**: Apply these triggers during the core iterative planning workflow to determine when to switch from single-loop to double-loop thinking.
+
+### Time-Based Triggers
+
+**MANDATORY**: If implementation time exceeds these thresholds, trigger double-loop thinking:
+
+- **2 hours** for adding features to existing codebase
+- **4 hours** for implementing new MVP greenfield projects
+
+When these thresholds are reached, ask:
+
+1. "Are we implementing something that already exists?"
+2. "Is this the right approach for the problem we're solving?"
+3. "Should we research alternative implementations?"
+
+### Implementation Complexity Triggers
+
+**MANDATORY**: Trigger double-loop thinking when:
+
+- The solution seems overly complex for the stated problem
+- You're implementing "standard" functionality from scratch -- something that should be solved by a package or library, or the language standard library
+- The implementation involves significant new technology or frameworks
+- The solution requires extensive custom code for what should be simple functionality
+
+### Package Discovery Guidelines
+
+**MANDATORY**: Before implementing any feature, research existing solutions:
+
+1. **Search language-specific package repositories**:
+   - Python: PyPI (pypi.org)
+   - JavaScript/Node.js: npm (npmjs.com)
+   - Ruby: RubyGems (rubygems.org)
+   - Go: pkg.go.dev
+   - Rust: crates.io
+2. **Search GitHub.com** for existing implementations:
+   - Look for repositories with similar functionality
+   - Check for open-source solutions that could be adapted
+   - Review implementation complexity and maintenance status
+3. **Evaluate existing solutions**:
+   - Does it solve the exact problem or a similar one?
+   - What's the implementation complexity vs. building from scratch?
+   - Is it actively maintained and well-documented?
+   - Does it integrate well with your existing stack?
+
+### User-Facing Feature Triggers
+
+**MANDATORY**: For any feature that users will interact with:
+
+1. **Question the user need**: "Does this actually solve a problem users have?"
+2. **Consider skill level**: "Is this appropriate for the target user's skill level?"
+3. **Evaluate alternatives**: "Are there simpler ways to achieve the same goal?"
+
+## Double-Loop Decision Framework
+
+**MANDATORY**: Use this decision tree when any trigger is activated:
+
+```text
+Has a trigger been activated?
+├─ No → Continue with single-loop optimization
+└─ Yes → Enter double-loop thinking mode
+   ├─ Research existing solutions
+   │  ├─ Found suitable existing solution? → Use it
+   │  └─ No suitable solution found? → Continue to next step
+   ├─ Question the approach
+   │  ├─ Is this the right problem to solve? → Reconsider goals
+   │  └─ Is this the right solution approach? → Research alternatives
+   ├─ Evaluate user needs
+   │  ├─ Does this solve a real user problem? → Continue
+   │  └─ No clear user need? → Reconsider feature
+   └─ Assess complexity
+      ├─ Is this overly complex? → Simplify approach
+      └─ Complexity is justified? → Continue with current plan
+```
+
+## Double-Loop Questions
+
+**MANDATORY**: When in double-loop thinking mode, ask these questions:
+
+**Problem Validation**:
+
+- "Are we solving the right problem?"
+- "What is the actual user need we're addressing?"
+- "Is this feature actually necessary?"
+
+**Solution Validation**:
+
+- "Is there a simpler way to achieve this goal?"
+- "Are we over-engineering the solution?"
+- "Could this be solved with existing tools or packages?"
+
+**Approach Validation**:
+
+- "Should we research alternative implementations?"
+- "Are we using the right technology for this problem?"
+- "Is this the right time to implement this feature?"
+
+**User Validation**:
+
+- "Will users actually use this feature?"
+- "Is this appropriate for our target users?"
+- "Are we building what users want or what we think they want?"
+
+## Integration with Core Workflow
+
+**MANDATORY**: Integrate double-loop thinking into the core iterative planning workflow:
+
+1. **During Plan Creation**: After creating the initial plan, check for triggers
+2. **During Implementation**: Monitor time and complexity thresholds
+3. **During Review**: Question whether the approach is still correct
+4. **During Iteration**: Re-evaluate goals and approach at each iteration
+
+**MANDATORY**: When triggers are activated, pause the current workflow and enter double-loop thinking mode before continuing.
+
+### Example Integration
+
+**MANDATORY**: Here's how to integrate with the core workflow:
+
+1. **Follow core iterative planning** (read prompt → create plan → ask questions → wait for approval)
+2. **Check for triggers** before beginning implementation
+3. **If triggers activated**: Enter double-loop thinking mode
+4. **Research alternatives** if needed
+5. **Re-evaluate plan** based on findings
+6. **Continue with core workflow** using updated plan
+
+## Validation and Feedback
+
+- Reduced time spent re-implementing existing functionality
+- Increased use of existing packages and solutions
+- Better alignment between implemented features and user needs
+- Reduced complexity in final solutions
+
+**MANDATORY**: Periodically ask the human to evaluate whether the double-loop thinking is helping or hindering the development process.
+
+## Acknowledgment
+
+This double-loop learning augmentation builds upon the core iterative planning workflow to help identify when optimization of the current approach should be replaced with questioning the approach itself. It provides specific, measurable triggers and decision frameworks to guide when and how to apply double-loop thinking in technical development projects.
+
+The augmentation preserves all existing functionality of the core iterative planning workflow while adding the ability to step back and question whether the current approach is the right one for the problem being solved.
