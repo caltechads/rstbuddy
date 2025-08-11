@@ -2,7 +2,7 @@ Using the Command Line Interface
 ================================
 
 The ``rstbuddy`` command-line interface provides
-supporting functionality for working with __FILL_ME_IN__. This guide covers all
+comprehensive tools for working with reStructuredText (RST) files. This guide covers all
 available commands and options.
 
 Getting Help
@@ -16,8 +16,11 @@ Basic Help
     # Show main help
     rstbuddy --help
 
-    # Show help for specific command groups
-    rstbuddy group1 --help
+    # Show help for specific commands
+    rstbuddy check-links --help
+    rstbuddy fix --help
+    rstbuddy summarize --help
+    rstbuddy settings --help
 
 Command Structure
 -----------------
@@ -26,7 +29,7 @@ The CLI follows a hierarchical command structure:
 
 .. code-block:: bash
 
-    rstbuddy [global-options] <command-group> <subcommand> [options]
+    rstbuddy [global-options] <command> [options] [arguments]
 
 Global Options
 --------------
@@ -42,114 +45,291 @@ Common options available for all commands:
     rstbuddy --quiet command
 
     # Specify custom configuration file
-    rstbuddy --config-file /path/to/config.yaml command
+    rstbuddy --config-file /path/to/config.toml command
 
     # Choose output format (json, table, text)
     rstbuddy --output json command
     rstbuddy --output table command
     rstbuddy --output text command
 
-Group1 Commands
----------------
+Check Links Command
+-------------------
 
-The ``group1`` command group provides tools for __FILL_ME_IN__.
+The ``check-links`` command recursively scans RST files for broken links.
 
-Feature 1 Usage
-^^^^^^^^^^^^^^^
+Basic Usage
+^^^^^^^^^^^
 
-Analyze __FILL_ME_IN__ to understand the setup:
-
-.. code-block:: bash
-
-    # Description of feature 1
-    rstbuddy group1 feature1
-
-    # Use arguments
-    rstbuddy group1 feature1 --arg "foo" --arg "bar"
-
-    # Use JSON output
-    rstbuddy --output json group1 feature1
-
-Example output:
-
-.. code-block:: json
-
-    {
-      "arg1": "foo",
-      "arg2": "bar",
-    }
-
-
-Group2 Commands
----------------
-
-The ``group2`` command group provides tools for __FILL_ME_IN__.
-
-Feature 2 Usage
-^^^^^^^^^^^^^^^
-
-List all available AWS services from botocore definitions:
+Check links in the default documentation directory:
 
 .. code-block:: bash
 
-    # Basic usage
-    rstbuddy group2 feature2
+    # Check links in default doc/source directory
+    rstbuddy check-links
 
-    # Use arguments
-    rstbuddy group2 feature2 --arg "foo" --arg "bar"
+    # Check links in specific directory
+    rstbuddy check-links /path/to/docs
 
-    # Use JSON output
-    rstbuddy --output json group2 feature2
+    # Use custom timeout and workers
+    rstbuddy check-links --timeout 10 --max-workers 16
 
-Example output:
+    # Skip robots.txt checks
+    rstbuddy check-links --no-check-robots
 
-.. code-block:: json
+    # Use custom user agent
+    rstbuddy check-links --user-agent "MyBot/1.0"
 
-    [
-      {
-        "arg1": "foo",
-        "arg2": "bar",
-      },
-      {
-        "arg1": "foo",
-        "arg2": "bar",
-      }
-    ]
+Command Options
+^^^^^^^^^^^^^^^
 
+**--timeout**
+    Per-link network timeout in seconds (default: 5)
 
-Show Settings
+**--max-workers**
+    Maximum number of concurrent workers for network checks (default: 8)
+
+**--no-check-robots**
+    Disable robots.txt checks for external links
+
+**--user-agent**
+    User-Agent string for HTTP requests and robots.txt (default: "cursortool-linkcheck/1.0")
+
+What Gets Checked
+^^^^^^^^^^^^^^^^^
+
+The command validates:
+
+- **External HTTP(S) Links**: URLs that return non-200 status codes or fail to connect
+- **Sphinx :ref: Roles**: References to labels that don't exist as explicit ``.. _label:`` declarations
+- **Sphinx :doc: Roles**: Document references where target .rst files cannot be resolved
+- **Directive Paths**: Include, literalinclude, download, image, figure, and thumbnail directives
+
+Example Output
 ^^^^^^^^^^^^^
 
-    # Use JSON output
-    rstbuddy --output json settings show
+Table output (default):
 
-Example output:
+.. code-block:: text
+
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                        Broken RST Links                         │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ File                    │ Line │ Link                           │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ overview/quickstart.rst │ 45   │ https://broken-link.com        │
+    │ api/models.rst          │ 12   │ :ref:`nonexistent_label`       │
+    │ api/models.rst          │ 23   │ :doc:`missing_document`        │
+    └─────────────────────────────────────────────────────────────────┘
+
+JSON output:
 
 .. code-block:: json
 
     {
-      "app_name": "rstbuddy",
-      "app_version": "1.2.3",
-      "default_output_format": "table",
-      "enable_colors": true,
-      "quiet_mode": false,
-      "log_level": "INFO",
-      "log_file": null
+      "overview/quickstart.rst": [
+        {
+          "line": 45,
+          "link": "https://broken-link.com",
+          "robots_disallowed": null
+        }
+      ],
+      "api/models.rst": [
+        {
+          "line": 12,
+          "link": ":ref:`nonexistent_label`",
+          "robots_disallowed": null
+        },
+        {
+          "line": 23,
+          "link": ":doc:`missing_document`",
+          "robots_disallowed": null
+        }
+      ]
     }
+
+Fix Command
+------------
+
+The ``fix`` command cleans and fixes RST files in place.
+
+Basic Usage
+^^^^^^^^^^^
+
+Fix a single RST file:
+
+.. code-block:: bash
+
+    # Fix a file with automatic backup
+    rstbuddy fix document.rst
+
+    # Preview changes without modifying the file
+    rstbuddy fix document.rst --dry-run
+
+What Gets Fixed
+^^^^^^^^^^^^^^^
+
+The command applies the following fixes:
+
+- **Markdown Headings**: Converts ``#``, ``##``, ``###`` to RST headings with proper underlines
+- **RST Headings**: Normalizes existing heading underlines to match title length exactly
+- **Code Blocks**: Converts fenced Markdown code blocks to RST code-block directives
+- **Inline Code**: Converts single-backtick spans to RST inline literals
+- **List Spacing**: Ensures proper blank lines after list blocks
+- **Stray Fences**: Removes orphaned triple backticks
+
+Example Output
+^^^^^^^^^^^^^^
+
+.. code-block:: text
+
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                        RST Clean Summary                        │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ File           │ Headings │ MD Headings │ Lists │ Code Blocks   │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ document.rst   │ 3        │ 5            │ 2     │ 1            │
+    └─────────────────────────────────────────────────────────────────┤
+
+Summarize Command
+-----------------
+
+The ``summarize`` command generates AI-powered summaries of RST files.
+
+.. important::
+
+    **OpenAI API Key Required**: This feature requires a valid OpenAI API key to be configured.
+    See :doc:`/overview/configuration` for setup instructions.
+
+Basic Usage
+^^^^^^^^^^^
+
+Generate a summary of an RST file:
+
+.. code-block:: bash
+
+    # Generate summary using OpenAI
+    rstbuddy summarize document.rst
+
+    # Use with custom configuration
+    rstbuddy --config-file ai-config.toml summarize document.rst
+
+What It Does
+^^^^^^^^^^^^
+
+The command:
+
+1. **Reads the RST file** and converts it to Markdown using Pandoc
+2. **Generates an AI summary** using OpenAI's API
+3. **Displays the summary** in a formatted output
+
+Requirements
+^^^^^^^^^^^
+
+- **Pandoc**: Must be installed and available in PATH
+- **OpenAI API Key**: Must be configured via settings or environment variables
+- **Internet Connection**: Required for API calls to OpenAI
+
+Example Output
+^^^^^^^^^^^^^
+
+.. code-block:: text
+
+    === Step 1: Reading RST file ===
+    Successfully read 15420 characters
+
+    === Step 4: Converting RST to Markdown ===
+    Successfully converted content to Markdown
+
+    === Step 3: Generating summary ===
+    === Step 4: Displaying summary ===
+
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                    AI-Generated Summary                         │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ This document provides a comprehensive guide to...              │
+    │                                                                 │
+    │ Key topics covered:                                             │
+    │ • Installation and setup                                        │
+    │ • Configuration options                                         │
+    │ • Usage examples                                                │
+    │ • Troubleshooting tips                                          │
+    └─────────────────────────────────────────────────────────────────┘
+
+Version Command
+---------------
+
+The ``version`` command displays version information.
+
+Basic Usage
+^^^^^^^^^^
+
+.. code-block:: bash
+
+    # Show version information
+    rstbuddy version
+
+Example Output
+^^^^^^^^^^^^^
+
+.. code-block:: text
+
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                      rstbuddy Version Info                      │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ Package    │ Version                                            │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ rstbuddy   │ 0.1.0                                              │
+    │ click      │ 8.1.7                                              │
+    │ rich       │ 13.7.0                                             │
+    └─────────────────────────────────────────────────────────────────┘
+
+Settings Command
+----------------
+
+The ``settings`` command displays current configuration settings.
+
+Basic Usage
+^^^^^^^^^^
+
+.. code-block:: bash
+
+    # Show all settings in table format (default)
+    rstbuddy settings
+
+    # Show settings in JSON format
+    rstbuddy --output json settings
+
+    # Show settings in text format
+    rstbuddy --output text settings
+
+Example Output
+^^^^^^^^^^^^^
+
+Table output (default):
+
+.. code-block:: text
+
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                            Settings                             │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ Setting Name                    │ Value                         │
+    ├─────────────────────────────────────────────────────────────────┤
+    │ app_name                        │ rstbuddy                      │
+    │ app_version                     │ 0.1.0                         │
+    │ documentation_dir               │ doc/source                    │
+    │ openai_api_key                  │                               │
+    │ clean_rst_extra_protected_regexes │ []                          │
+    │ check_rst_links_skip_domains   │ []                             │
+    │ check_rst_links_extra_skip_directives │ []                      │
+    │ default_output_format           │ table                         │
+    │ enable_colors                   │ True                          │
+    │ quiet_mode                      │ False                         │
+    │ log_level                       │ INFO                          │
+    │ log_file                        │ None                          │
+    └─────────────────────────────────────────────────────────────────┘
 
 Output Formats
 --------------
-
-JSON Format
-^^^^^^^^^^^
-
-.. code-block:: bash
-
-    # JSON output for scripting and automation
-    rstbuddy --output json group1 feature1 > config.json
-
-    # JSON output for settings
-    rstbuddy --output json settings show > settings.json
 
 Table Format (Default)
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -157,13 +337,18 @@ Table Format (Default)
 .. code-block:: bash
 
     # Table output for better readability
-    rstbuddy group1 feature1
+    rstbuddy check-links
+    rstbuddy fix document.rst
+    rstbuddy settings
 
-    # Table output for AWS services
-    rstbuddy group2 feature2
+JSON Format
+^^^^^^^^^^^
 
-    # Table output for settings
-    rstbuddy settings show
+.. code-block:: bash
+
+    # JSON output for scripting and automation
+    rstbuddy --output json check-links > broken_links.json
+    rstbuddy --output json settings > settings.json
 
 Text Format
 ^^^^^^^^^^^
@@ -171,10 +356,8 @@ Text Format
 .. code-block:: bash
 
     # Simple text output
-    rstbuddy --output text group1 feature1
-
-    # Text output for settings
-    rstbuddy --output text settings show
+    rstbuddy --output text check-links
+    rstbuddy --output text settings
 
 Configuration
 -------------
@@ -190,25 +373,34 @@ Basic Usage Examples
 
 .. code-block:: bash
 
-    # Sample usage 1
-    rstbuddy group1 feature1 --arg1 "foo" --arg2 "bar"
+    # Check all links in documentation
+    rstbuddy check-links
 
-    # Sample usage 2
-    rstbuddy group2 feature2 --arg1 "foo" --arg2 "bar"
+    # Fix formatting issues in a file
+    rstbuddy fix README.rst
+
+    # Generate AI summary (requires OpenAI API key)
+    rstbuddy summarize document.rst
 
     # Show current settings
-    rstbuddy settings show
+    rstbuddy settings
 
 Advanced Usage Examples
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-    # Advanced usage 1
-    rstbuddy group1 feature1 --arg1 "foo" --arg2 "bar"
+    # Check links with custom timeout and workers
+    rstbuddy check-links --timeout 15 --max-workers 20
 
-    # Advanced usage 2
-    rstbuddy group2 feature2 --arg1 "foo" --arg2 "bar"
+    # Fix file with preview (dry run)
+    rstbuddy fix document.rst --dry-run
+
+    # Use custom configuration file
+    rstbuddy --config-file ./rstbuddy.toml check-links
+
+    # Output in JSON format for scripting
+    rstbuddy --output json check-links > report.json
 
 Scripting Examples
 ^^^^^^^^^^^^^^^^^^
@@ -217,13 +409,27 @@ Scripting Examples
 
     #!/bin/bash
 
-    echo "Doing something..."
+    echo "Checking RST documentation..."
 
-    # Analyze something
-    echo "Analysis:"
-    rstbuddy --output table group1 feature1
+    # Check for broken links
+    if rstbuddy check-links; then
+        echo "All links are valid!"
+    else
+        echo "Found broken links. Check the output above."
+        exit 1
+    fi
 
-    echo "Analysis complete."
+    echo "Fixing RST formatting..."
+
+    # Fix all RST files in current directory
+    for file in *.rst; do
+        if [ -f "$file" ]; then
+            echo "Fixing $file..."
+            rstbuddy fix "$file"
+        fi
+    done
+
+    echo "Documentation maintenance complete."
 
 Error Handling
 --------------
@@ -231,16 +437,38 @@ Error Handling
 Common Error Scenarios
 ^^^^^^^^^^^^^^^^^^^^^^
 
-**Error 1**
+**Broken Links Found**
 
     .. code-block:: bash
 
-        # Error: No __FILL_ME_IN__ found
-        rstbuddy group1 feature1
-        # Error: No __FILL_ME_IN__ found
+        # Error: Broken links detected
+        rstbuddy check-links
+        # SystemExit: 1 (non-zero exit code)
 
-        # Solution: Ensure you're in the right directory
-        ls *.tf
+        # Solution: Review and fix broken links manually
+        # Check if links are actually broken or blocked by WAF/Cloudflare
+
+**File Not Found**
+
+    .. code-block:: bash
+
+        # Error: File does not exist
+        rstbuddy fix nonexistent.rst
+        # Error: [Errno 2] No such file or directory
+
+        # Solution: Ensure the file exists and path is correct
+        ls *.rst
+
+**OpenAI API Key Missing**
+
+    .. code-block:: bash
+
+        # Error: OpenAI API key not configured
+        rstbuddy summarize document.rst
+        # Error: ConfigurationError: OpenAI API key required
+
+        # Solution: Set API key in configuration or environment
+        export RSTBUDDY_OPENAI_API_KEY="your-key-here"
 
 Troubleshooting
 ---------------
@@ -251,23 +479,32 @@ Debugging Commands
 .. code-block:: bash
 
     # Enable verbose output for debugging
-    rstbuddy --verbose group1 feature1
+    rstbuddy --verbose check-links
 
-    # Do something to check if it's working
-    bash command here
+    # Use dry run to preview changes
+    rstbuddy fix document.rst --dry-run
+
+    # Check current configuration
+    rstbuddy settings
 
 Common Issues
 ~~~~~~~~~~~~~
 
-**__FILL_ME_IN__**
-    - Ensure that ..
-    - Verify file permissions
+**False Positive Broken Links**
+    - **WAF/Cloudflare Protection**: Some websites block automated tools
+    - **Rate Limiting**: Servers may temporarily block requests
+    - **User-Agent Filtering**: Some sites reject certain user agents
+    - **Solution**: Manually verify links that appear broken
 
-**Output Format Issues**
-    - Use `--output json` for machine-readable output
-    - Use `--output table` for human-readable output
-    - Use `--output text` for simple text output
+**Pandoc Not Found**
+    - **Error**: "pandoc: command not found"
+    - **Solution**: Install Pandoc from https://pandoc.org/installing.html
+    - **Alternative**: Use other commands that don't require Pandoc
 
+**OpenAI API Errors**
+    - **Rate Limiting**: API may throttle requests
+    - **Authentication**: Verify API key is correct and has sufficient credits
+    - **Network Issues**: Check internet connection and firewall settings
 
 Best Practices
 --------------
@@ -279,14 +516,14 @@ Choose appropriate output formats:
 
 .. code-block:: bash
 
+    # Use table for human reading (default)
+    rstbuddy check-links
+
     # Use JSON for scripting and automation
-    rstbuddy --output json group1 feature1 > config.json
+    rstbuddy --output json check-links > report.json
 
-    # Use table for human reading
-    rstbuddy --output table group1 feature1
-
-    # Use text for simple lists
-    rstbuddy --output text group1 feature1 --names-only
+    # Use text for simple output
+    rstbuddy --output text settings
 
 Configuration Management
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -296,8 +533,16 @@ Use configuration files when necessary:
 .. code-block:: bash
 
     # Use custom configuration file
-    rstbuddy --config-file ./rstbuddy.toml group1 feature1
+    rstbuddy --config-file ./rstbuddy.toml check-links
 
     # Set environment variables
-    export rstbuddy_CONFIG_FILE=./rstbuddy.toml
-    rstbuddy group1 feature1
+    export RSTBUDDY_DOCUMENTATION_DIR="./docs"
+    rstbuddy check-links
+
+Link Checking Best Practices
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- **Manual Verification**: Always verify HTTP links manually if they appear broken
+- **WAF Awareness**: Be aware that Cloudflare and other WAFs may block automated tools
+- **Rate Limiting**: Use appropriate timeouts and worker counts
+- **Robots.txt**: Respect robots.txt when checking external links

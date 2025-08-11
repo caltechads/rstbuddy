@@ -1,26 +1,24 @@
 Quickstart Guide
 ================
 
-This guide will get you up and running with ``rstbuddy`` quickly, showing both
-the Python client and command-line interface.
+This guide will get you up and running with ``rstbuddy`` quickly, showing the
+command-line interface for working with reStructuredText (RST) files.
 
 Prerequisites
 -------------
 
-- Python 3.10 or higher
+- Python 3.11 or higher
 - Follow the :doc:`/overview/installation` instructions to install ``rstbuddy``
-- Other prerequisites here
+- Pandoc (optional, required only for AI summarization feature)
+- OpenAI API key (optional, required only for AI summarization feature)
 
 Configuration
 -------------
 
-Typically the defaults that ship with ``rstbuddy``
-will work. If you need to change those defaults, you can create a configuration
-file at ``~/.rstbuddy.conf``:
+Typically the defaults that ship with ``rstbuddy`` will work.
 
-You can configure ``rstbuddy`` using configuration
-files or environment variables. See :doc:`/overview/configuration` for more
-details.
+You can configure ``rstbuddy`` using configuration files or environment
+variables. See :doc:`/overview/configuration` for more details.
 
 Basic Usage
 -----------
@@ -33,51 +31,86 @@ Get Help
     # Show main help
     rstbuddy --help
 
-    # Show help for specific command groups
-    rstbuddy group1 --help
-    rstbuddy group2 --help
-    rstbuddy group3 --help
+    # Show help for specific commands
+    rstbuddy check-links --help
+    rstbuddy fix --help
+    rstbuddy summarize --help
     rstbuddy settings --help
 
-Feature 1 Usage
-^^^^^^^^^^^^^^^
+Check Links Usage
+^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-    # List all features
-    rstbuddy group1 feature1
+    # Check all links in default doc/source directory
+    rstbuddy check-links
 
-    # Filter services by pattern
-    rstbuddy group1 feature1 --arg "foo" --arg "bar"
+    # Check links in specific directory
+    rstbuddy check-links /path/to/docs
 
+    # Use custom timeout and workers
+    rstbuddy check-links --timeout 10 --max-workers 16
 
-Feature 2 Usage
-^^^^^^^^^^^^^^^
+    # Skip robots.txt checks
+    rstbuddy check-links --no-check-robots
+
+Fix RST Files Usage
+^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-    # List all features
-    rstbuddy group2 feature2
+    # Fix a single RST file (creates backup automatically)
+    rstbuddy fix document.rst
 
-    # Filter services by pattern
-    rstbuddy group2 feature2 --arg "foo" --arg "bar"
+    # Preview changes without modifying the file
+    rstbuddy fix document.rst --dry-run
 
-Output Formats
+    # Fix multiple files at a time
+    find . -name "*.rst" -exec rstbuddy fix {} \;
+
+AI Summarization Usage
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. important::
+
+    **OpenAI API Key Required**: This feature requires a valid OpenAI API key.
+    See :doc:`/overview/configuration` for setup instructions.
+
+.. code-block:: bash
+
+    # Generate AI summary of an RST file
+    rstbuddy summarize document.rst
+
+    # Use with custom configuration
+    rstbuddy --config-file ai-config.toml summarize document.rst
+
+Settings Usage
 ^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
+    # Show all current settings
+    rstbuddy settings
+
+    # Show settings in JSON format
+    rstbuddy --output json settings
+
+    # Show settings in text format
+    rstbuddy --output text settings
+
+Output Formats
+^^^^^^^^^^^^^
+
+.. code-block:: bash
+
     # Use table format (default) for human reading
-    rstbuddy group1 feature1 --output table
+    rstbuddy check-links --output table
 
     # Use JSON format for scripting
-    rstbuddy group1 feature1 --output json
+    rstbuddy check-links --output json
 
     # Use text format for simple output
-    rstbuddy group1 feature1 --output text
-
-    # Use text format for settings
-    rstbuddy group1 feature1 --output text settings
+    rstbuddy check-links --output text
 
 Next Steps
 ----------
@@ -94,3 +127,48 @@ Getting Help
 - Check the full documentation for detailed examples
 - Review the troubleshooting sections in each guide
 - Report issues on the GitHub repository
+
+Common Workflows
+----------------
+
+Documentation Maintenance
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    # 1. Check for broken links
+    rstbuddy check-links
+
+    # 2. Fix formatting issues
+    rstbuddy fix /path/to/rst_file.rst
+
+    # 3. Verify fixes
+    rstbuddy check-links
+
+Content Migration
+^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    # 1. Fix Markdown-to-RST conversion issues
+    rstbuddy fix migrated_document.rst
+
+    # 2. Check that all internal links work
+    rstbuddy check-links
+
+    # 3. Generate summary (if AI features enabled)
+    rstbuddy summarize migrated_document.rst
+
+Quality Assurance
+^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    # 1. Validate all documentation links
+    rstbuddy check-links /path/to/docs
+
+    # 2. Fix any formatting issues
+    find /path/to/docs -name "*.rst" -exec rstbuddy fix {} \;
+
+    # 3. Re-check links to ensure fixes worked
+    rstbuddy check-links /path/to/docs

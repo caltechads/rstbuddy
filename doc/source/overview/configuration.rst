@@ -5,8 +5,8 @@ This guide covers all configuration options for the
 ``rstbuddy`` command line tool, including
 configuration files, environment variables, and command-line options.
 
-``rstbuddy`` is a __FILL_ME_IN__.  The default
-configuration should work for most use cases, but you can customize behavior
+``rstbuddy`` is a Python command-line tool for working with reStructuredText (RST) files.
+The default configuration should work for most use cases, but you can customize behavior
 through various configuration methods.
 
 Configuration Methods
@@ -28,9 +28,9 @@ File Locations
 
 Configuration files are searched in this order:
 
-1. **Global configuration**: ``/etc/rstbuddy.toml`` (Unix/Linux) or ``C:/ProgramData/rstbuddy.toml`` (Windows)
-2. **User configuration**: ``~/.cookiecutter.project_python_name}}/config.toml``
-3. **Local configuration**: ``./rstbuddy.toml`` (current directory)
+1. **Global configuration**: ``/etc/rstbuddy/.rstbuddy.toml`` (Unix/Linux) or ``C:/ProgramData/.rstbuddy.toml`` (Windows)
+2. **User configuration**: ``~/.config/.rstbuddy.toml``
+3. **Local configuration**: ``./.rstbuddy.toml`` (current directory)
 4. **Environment variables**: via the ``RSTBUDDY_CONFIG_FILE`` environment variable
 5. **Explicit configuration**: Path specified with ``--config-file`` option
 
@@ -41,6 +41,28 @@ Configuration files use TOML format:
 
 .. code-block:: toml
 
+    # Documentation directory
+    documentation_dir = "doc/source"
+
+    # OpenAI Configuration (for AI summarization)
+    openai_api_key = "your-api-key-here"
+
+    # RST Cleaning Settings
+    clean_rst_extra_protected_regexes = [
+        "\\bprotected_pattern\\b",
+        "\\bdo_not_modify\\b"
+    ]
+
+    # RST Link Checking Settings
+    check_rst_links_skip_domains = [
+        "example.com",
+        "test.local"
+    ]
+    check_rst_links_extra_skip_directives = [
+        "custom_code",
+        "protected_block"
+    ]
+
     # Output settings
     default_output_format = "table"
     enable_colors = true
@@ -48,14 +70,27 @@ Configuration files use TOML format:
 
     # Logging settings
     log_level = "INFO"
-    log_file = "/var/log/tfmate.log"
+    log_file = "/var/log/rstbuddy.log"
 
 Configuration Options
 ^^^^^^^^^^^^^^^^^^^^^
 
 **Application Settings**
-    - **app_name**: Application name (default: ``rstbuddy``)
-    - **app_version**: Application version (default: ``0.1.0``)
+    - **app_name**: Application name (default: ``rstbuddy``, readonly)
+    - **app_version**: Application version (default: ``0.1.0``, readonly)
+
+**Documentation Settings**
+    - **documentation_dir**: Top-level directory for RST files to be processed (default: ``doc/source``)
+
+**OpenAI Configuration**
+    - **openai_api_key**: OpenAI API key for AI summarization feature (default: empty string)
+
+**RST Cleaning Settings**
+    - **clean_rst_extra_protected_regexes**: List of regex patterns; if a line matches any, rstbuddy will not modify that line (default: empty list)
+
+**RST Link Checking Settings**
+    - **check_rst_links_skip_domains**: List of domain substrings to skip during external link validation (default: empty list)
+    - **check_rst_links_extra_skip_directives**: Additional directive names whose content should be ignored when scanning links (default: empty list)
 
 **Output Settings**
     - **default_output_format**: Default output format - ``table``, ``json``, or ``text`` (default: ``table``)
@@ -74,6 +109,12 @@ follow the pattern ``RSTBUDDY_<SETTING_NAME>``:
 
 .. code-block:: bash
 
+    # Set documentation directory
+    export RSTBUDDY_DOCUMENTATION_DIR="/path/to/docs"
+
+    # Set OpenAI API key
+    export RSTBUDDY_OPENAI_API_KEY="your-api-key-here"
+
     # Set output format
     export RSTBUDDY_DEFAULT_OUTPUT_FORMAT="json"
 
@@ -83,6 +124,11 @@ follow the pattern ``RSTBUDDY_<SETTING_NAME>``:
 Environment Variable Mapping
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+- ``RSTBUDDY_DOCUMENTATION_DIR`` → ``documentation_dir``
+- ``RSTBUDDY_OPENAI_API_KEY`` → ``openai_api_key``
+- ``RSTBUDDY_CLEAN_RST_EXTRA_PROTECTED_REGEXES`` → ``clean_rst_extra_protected_regexes``
+- ``RSTBUDDY_CHECK_RST_LINKS_SKIP_DOMAINS`` → ``check_rst_links_skip_domains``
+- ``RSTBUDDY_CHECK_RST_LINKS_EXTRA_SKIP_DIRECTIVES`` → ``check_rst_links_extra_skip_directives``
 - ``RSTBUDDY_DEFAULT_OUTPUT_FORMAT`` → ``default_output_format``
 - ``RSTBUDDY_ENABLE_COLORS`` → ``enable_colors``
 - ``RSTBUDDY_QUIET_MODE`` → ``quiet_mode``
@@ -122,7 +168,7 @@ Option Reference
     Example:
     .. code-block:: bash
 
-        rstbuddy --verbose group command
+        rstbuddy --verbose check-links
 
 **--quiet, -q**
     Suppress all output except errors.
@@ -130,7 +176,7 @@ Option Reference
     Example:
     .. code-block:: bash
 
-        rstbuddy --quiet group command
+        rstbuddy --quiet fix file.rst
 
 **--config-file**
     Specify a custom configuration file path.
@@ -138,7 +184,7 @@ Option Reference
     Example:
     .. code-block:: bash
 
-        rstbuddy --config-file ./custom-config.toml group command
+        rstbuddy --config-file ./custom-config.toml check-links
 
 **--output**
     Choose output format: ``json``, ``table``, or ``text``.
@@ -148,7 +194,7 @@ Option Reference
     Example:
     .. code-block:: bash
 
-        rstbuddy --output json group command
+        rstbuddy --output json check-links
 
 Configuration Examples
 ----------------------
@@ -160,7 +206,7 @@ For basic usage with defaults:
 
 .. code-block:: toml
 
-    # ~/.rstbuddy.toml
+    # ~/.config/.rstbuddy.toml
     # No configuration file needed - defaults work for most cases
 
 Development Environment
@@ -170,36 +216,72 @@ For development and testing:
 
 .. code-block:: toml
 
-    # ~/.rstbuddy.toml
+    # ~/.config/.rstbuddy.toml
+    documentation_dir = "docs"
     default_output_format = "json"
     enable_colors = true
     log_level = "DEBUG"
 
+    # Skip test domains during link checking
+    check_rst_links_skip_domains = [
+        "test.example.com",
+        "localhost"
+    ]
+
 Production Environment
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 For production systems:
 
 .. code-block:: toml
 
-    # /etc/rstbuddy.toml
+    # /etc/rstbuddy/.rstbuddy.toml
+    documentation_dir = "/var/www/docs"
     default_output_format = "table"
     enable_colors = false
     log_level = "WARNING"
     log_file = "/var/log/rstbuddy.log"
 
-AWS-Specific Configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # Protect specific patterns from modification
+    clean_rst_extra_protected_regexes = [
+        "\\bPRODUCTION_ONLY\\b",
+        "\\bDO_NOT_MODIFY\\b"
+    ]
 
-For AWS-focused workflows:
+AI Summarization Setup
+^^^^^^^^^^^^^^^^^^^^^^
+
+To enable AI-powered summarization:
 
 .. code-block:: toml
 
-    # ~/.config/tfmate/config.toml
-    aws_default_region = "us-west-2"
-    aws_default_profile = "production"
-    terraform_timeout = 45
-    terraform_max_retries = 3
+    # ~/.config/.rstbuddy.toml
+    # OpenAI API key for AI summarization
+    openai_api_key = "sk-..."
+
+    # Other settings as needed
+    documentation_dir = "docs"
+    default_output_format = "table"
+
+Link Checking Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For projects with specific link checking needs:
+
+.. code-block:: toml
+
+    # ~/.config/.rstbuddy.toml
+    # Skip specific domains that often give false positives
+    check_rst_links_skip_domains = [
+        "cloudflare.com",
+        "waf.example.com"
+    ]
+
+    # Skip custom directives that contain code
+    check_rst_links_extra_skip_directives = [
+        "custom_code_block",
+        "protected_section"
+    ]
 
 Scripting Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -208,11 +290,12 @@ For automation and scripting:
 
 .. code-block:: toml
 
-    # ~/.rstbuddy.toml
+    # ~/.config/.rstbuddy.toml
     default_output_format = "json"
     enable_colors = false
     quiet_mode = true
     log_level = "ERROR"
+    log_file = "/dev/stdout"
 
 Security Considerations
 -----------------------
@@ -225,11 +308,11 @@ Protect your configuration files:
 .. code-block:: bash
 
     # Set proper permissions for user configuration
-    chmod 600 ~/.rstbuddy.toml
+    chmod 600 ~/.config/.rstbuddy.toml
 
     # For system-wide configuration
-    chmod 640 /etc/rstbuddy.toml
-    chown root:root /etc/rstbuddy.toml
+    chmod 640 /etc/rstbuddy/.rstbuddy.toml
+    chown root:root /etc/rstbuddy/.rstbuddy.toml
 
 Environment Variable Security
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -238,13 +321,27 @@ Secure environment variable usage:
 
 .. code-block:: bash
 
-    from rstbuddy.settings import Settings
+    # Set sensitive data as environment variables
+    export RSTBUDDY_OPENAI_API_KEY="your-secret-key"
 
-    # Load and display configuration
-    settings = Settings()
-    print(f"Output format: {settings.default_output_format}")
-    print(f"Timeout: {settings.terraform_timeout}")
-    print(f"AWS region: {settings.aws_default_region}")
+    # Clear sensitive environment variables after use
+    unset RSTBUDDY_OPENAI_API_KEY
+
+OpenAI API Key Security
+^^^^^^^^^^^^^^^^^^^^^^^
+
+When using AI summarization:
+
+.. code-block:: bash
+
+    # Store API key securely
+    export RSTBUDDY_OPENAI_API_KEY="sk-..."
+
+    # Use in scripts
+    rstbuddy summarize document.rst
+
+    # Clear after use
+    unset RSTBUDDY_OPENAI_API_KEY
 
 Common Issues
 ^^^^^^^^^^^^^
@@ -282,6 +379,7 @@ The library validates configuration:
 - **log_level**: Must be one of ``DEBUG``, ``INFO``, ``WARNING``, or ``ERROR``
 - **enable_colors**: Must be a boolean value
 - **quiet_mode**: Must be a boolean value
+- **documentation_dir**: Must be a valid directory path
 
 Error Messages
 ^^^^^^^^^^^^^^
@@ -296,6 +394,9 @@ Common validation errors:
     # Invalid log level
     Error: log_level must be one of DEBUG, INFO, WARNING, ERROR
 
+    # Invalid documentation directory
+    Error: Documentation dir 'invalid/path' does not exist
+
 Best Practices
 --------------
 
@@ -304,7 +405,7 @@ Configuration Management
 
 1. **Use configuration files for defaults**
 
-   - Set common settings in ``~/.rstbuddy.toml``
+   - Set common settings in ``~/.config/.rstbuddy.toml``
    - Use environment variables for overrides
    - Use command-line options for one-time changes
 
@@ -328,7 +429,7 @@ Configuration Management
 
 5. **Testing**
 
-   - Test timeout settings for your environment
+   - Test configuration settings for your environment
    - Verify output formats work for your use case
    - Test logging configuration
 
@@ -340,9 +441,10 @@ Basic Template
 
 .. code-block:: toml
 
-    # config.toml.template
-    # Application settings
-    [rstbuddy]
+    # .rstbuddy.toml.template
+    # Documentation settings
+    documentation_dir = "doc/source"
+
     # Output settings
     default_output_format = "table"
     enable_colors = true
@@ -352,55 +454,21 @@ Basic Template
     log_level = "INFO"
     log_file = null
 
-Production Template
-^^^^^^^^^^^^^^^^^^^
+AI Summarization Template
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: toml
 
-    # production.toml
-    # Application settings
-    [rstbuddy]
+    # ai-summarization.toml
+    # OpenAI API key (required for AI summarization)
+    openai_api_key = "sk-your-api-key-here"
+
+    # Documentation settings
+    documentation_dir = "docs"
 
     # Output settings
     default_output_format = "table"
-    enable_colors = false
-    quiet_mode = false
-
-    # Logging settings
-    log_level = "WARNING"
-    log_file = "/var/log/rstbuddy.log"
-
-Development Template
-^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: toml
-
-    # development.toml
-    # Application settings
-    [tfmate]
-    # Output settings
-    default_output_format = "json"
     enable_colors = true
-    quiet_mode = false
 
     # Logging settings
-    log_level = "DEBUG"
-    log_file = null
-
-Scripting Template
-^^^^^^^^^^^^^^^^^^
-
-.. code-block:: toml
-
-    # scripting.toml
-    # Application settings
-    [rstbuddy]
-
-    # Output settings
-    default_output_format = "json"
-    enable_colors = false
-    quiet_mode = true
-
-    # Logging settings
-    log_level = "ERROR"
-    log_file = "/dev/stdout"
+    log_level = "INFO"
