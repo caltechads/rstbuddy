@@ -166,7 +166,7 @@ class RSTCleaner:
         report.lists_spaced += lists_spaced
 
         # Ensure a blank line exists between adjacent code-block directives
-        lines = self._ensure_blank_line_between_code_blocks(lines)
+        lines = self._ensure_blank_line_after_code_blocks(lines)
 
         cleaned_text = "\n".join(lines) + ("\n" if text.endswith("\n") else "")
 
@@ -638,9 +638,9 @@ class RSTCleaner:
 
         return protected
 
-    def _ensure_blank_line_between_code_blocks(self, lines: list[str]) -> list[str]:
+    def _ensure_blank_line_after_code_blocks(self, lines: list[str]) -> list[str]:
         """
-        Ensure a blank line exists between adjacent code-block directives.
+        Ensure a blank line exists after every code-block directive.
 
         Args:
             lines: Input lines
@@ -653,13 +653,10 @@ class RSTCleaner:
         i = 0
         while i < len(lines):
             out.append(lines[i])
-            if (
-                i + 1 < len(lines)
-                and lines[i].lstrip().startswith(".. code-block::")
-                and lines[i + 1].lstrip().startswith(".. code-block::")
-            ):
-                # Insert a blank line if not already present
-                if out and out[-1].strip() != "":
+            if lines[i].lstrip().startswith(".. code-block::"):
+                # Ensure there's a blank line after this code-block directive
+                if i + 1 < len(lines) and lines[i + 1].strip() != "":
+                    # Next line is not blank, so add a blank line
                     out.append("")
             i += 1
         return out
