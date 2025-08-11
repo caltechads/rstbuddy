@@ -212,6 +212,22 @@ class RSTLinkChecker:
                 in_directive = directive_name
                 just_opened = True
 
+            # NEW: Collect links from directive arguments (do this before skipping)
+            if just_opened and in_directive:
+                # Extract links from directive arguments
+                directive_links = self._extract_directive_links(line, in_directive)
+                for link in directive_links:
+                    if link.startswith(("http://", "https://")):
+                        # External URL - add to HTTP occurrences
+                        occurrences_http.append(
+                            LinkOccurrence(file_path=p, line_number=idx, link_text=link)
+                        )
+                    else:
+                        # Local file path - add to doc occurrences for validation
+                        occurrences_doc.append(
+                            LinkOccurrence(file_path=p, line_number=idx, link_text=link)
+                        )
+
             # Determine if we are in a directive content that should be skipped
             skip_due_to_directive = False
             if in_directive:
@@ -248,11 +264,13 @@ class RSTLinkChecker:
                 continue
 
             # Collect external links (trim trailing punctuation common in prose)
-            for m in re.finditer(r"(?<!`)\bhttps?://[^\s`<>]+", line):
-                url = m.group(0).rstrip(".,);:")
-                occurrences_http.append(
-                    LinkOccurrence(file_path=p, line_number=idx, link_text=url)
-                )
+            # Skip if we're on a directive line to avoid duplication
+            if not just_opened:
+                for m in re.finditer(r"(?<!`)\bhttps?://[^\s`<>]+", line):
+                    url = m.group(0).rstrip(".,);:")
+                    occurrences_http.append(
+                        LinkOccurrence(file_path=p, line_number=idx, link_text=url)
+                    )
 
             # Collect :ref: role occurrences, keep full role text
             for m in re.finditer(r":ref:`([^`]+)`", line):
@@ -329,6 +347,39 @@ class RSTLinkChecker:
             return m.group(2).strip()
         return None
 
+    def _extract_directive_links(self, line: str, directive_name: str) -> list[str]:
+        """
+        Extract links from directive arguments.
+
+        Args:
+            line: The directive line to parse
+            directive_name: Name of the directive
+
+        Returns:
+            List of extracted links/URLs
+        """
+        links = []
+
+        # Check if this is one of our target directives
+        if directive_name in {
+            "literalinclude",
+            "include",
+            "download",
+            "image",
+            "figure",
+            "thumbnail",
+        }:
+            # Extract the argument after the directive
+            match = re.search(
+                r"\.\.\s+" + re.escape(directive_name) + r"::\s+(.+)$", line
+            )
+            if match:
+                arg = match.group(1).strip()
+                if arg:  # Only add non-empty arguments
+                    links.append(arg)
+
+        return links
+
     def _resolve_doc_paths(self, source_file: Path, target: str) -> list[Path]:
         """
         Compute candidate filesystem paths for a ``:doc:`` target.
@@ -358,6 +409,37 @@ class RSTLinkChecker:
             rel = target
             candidates.append((source_file.parent / (rel + ".rst")).resolve())
             candidates.append((doc_source / (rel + ".rst")).resolve())
+        return candidates
+
+    def _resolve_directive_paths(self, source_file: Path, target: str) -> list[Path]:
+        """
+        Compute candidate filesystem paths for a directive target.
+
+        Resolution rules:
+        - Absolute targets (starting with ``/``) are interpreted relative to
+          the Sphinx source directory
+          (:attr:`~rstbuddy.settings.Settings.documentation_dir`).
+        - Relative targets are resolved relative to the current file's
+          directory; if not found, a second attempt is made relative to
+          :attr:`~rstbuddy.settings.Settings.documentation_dir`.
+
+        Args:
+            source_file: The file where the directive appears.
+            target: The directive target (may include file extension).
+
+        Returns:
+            Candidate absolute paths, in resolution order.
+
+        """
+        doc_source = Path(self.settings.documentation_dir).resolve()
+        candidates: list[Path] = []
+        if target.startswith("/"):
+            rel = target.lstrip("/")
+            candidates.append((doc_source / rel).resolve())
+        else:
+            rel = target
+            candidates.append((source_file.parent / rel).resolve())
+            candidates.append((doc_source / rel).resolve())
         return candidates
 
     # ---- Main API
@@ -428,15 +510,24 @@ class RSTLinkChecker:
             if not label or label not in label_index:
                 broken_occurrences.append(occ)
 
-        # :doc: occurrences
+        # :doc: occurrences and directive paths
         for occ in all_doc:
-            target = self._extract_doc_target(occ.link_text)
-            if not target:
-                broken_occurrences.append(occ)
-                continue
-            candidates = self._resolve_doc_paths(occ.file_path, target)
-            if not any(p.exists() for p in candidates):
-                broken_occurrences.append(occ)
+            # Check if this is a :doc: role or a directive path
+            if occ.link_text.startswith(":doc:"):
+                # Handle :doc: roles
+                target = self._extract_doc_target(occ.link_text)
+                if not target:
+                    broken_occurrences.append(occ)
+                    continue
+                candidates = self._resolve_doc_paths(occ.file_path, target)
+                if not any(p.exists() for p in candidates):
+                    broken_occurrences.append(occ)
+            else:
+                # Handle directive paths (they're already in the correct format)
+                target = occ.link_text
+                candidates = self._resolve_directive_paths(occ.file_path, target)
+                if not any(p.exists() for p in candidates):
+                    broken_occurrences.append(occ)
 
         # Sort deterministically: by file then line
         broken_occurrences.sort(key=lambda o: (str(o.file_path), o.line_number))

@@ -64,7 +64,7 @@ def check_links(  # noqa: PLR0913
     - :ref: roles whose labels are not defined via explicit ``.. _label:``
     - :doc: roles whose target .rst file cannot be resolved
 
-    Output format is controlled by the top-level --output option: table, json, or csv.
+    Output format is controlled by the top-level --output option: json, table, or text.
 
     """
     base = root or Path("doc")
@@ -85,10 +85,8 @@ def check_links(  # noqa: PLR0913
     if output_format == "json":
         data = checker.render_json(broken)
         click.echo(json.dumps(data, indent=2))
-    elif output_format == "csv":
-        click.echo(checker.render_csv(broken))
     else:
-        # Pretty table with rich
+        # Pretty table with rich (for table and text formats)
         table = Table(title="Broken RST Links")
         table.add_column("File")
         table.add_column("Line")
