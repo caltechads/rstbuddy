@@ -5,7 +5,6 @@ Tests the new OpenAI and summary generation configuration fields,
 validation logic, and TOML file loading.
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -49,35 +48,27 @@ class TestConfiguration:
         ):
             settings.validate_settings()
 
-    @patch("rstbuddy.settings.Path.exists")
     @patch("rstbuddy.settings.Path.home")
-    @patch("rstbuddy.settings.Path.cwd")
-    def test_load_config_with_toml_file(self, mock_cwd, mock_home, mock_exists):
+    def test_load_config_with_toml_file(self, mock_home, tmp_path):
         """Test loading configuration with TOML file."""
         # Mock file system calls to simulate a config file existing
-        mock_exists.return_value = True
-        mock_home.return_value = Path("/home/user")
-        mock_cwd.return_value = Path("/current/dir")
+        mock_home.return_value = tmp_path / "home" / "user"
+        mock_home.return_value.mkdir(parents=True, exist_ok=True)
+        config_file = mock_home.return_value / ".rstbuddy.toml"
+        config_file.write_text('openai_api_key = "sk-test-from-toml"', encoding="utf-8")
 
-        # Test that the Settings class can be instantiated with TOML-like behavior
-        # Since the actual TOML loading is handled by Pydantic internally,
-        # we'll test the configuration precedence and field handling instead
-
-        # Test that we can create settings with values
-        settings = Settings(
-            openai_api_key="sk-test-from-toml", documentation_dir="docs"
-        )
+        # Test that our TOML file is loaded
+        settings = Settings()
 
         # Verify the values are set correctly
         assert settings.openai_api_key == "sk-test-from-toml"
-        assert settings.documentation_dir == "docs"
 
-        # Test that the settings_customize_sources method exists and is callable
-        assert hasattr(Settings, "settings_customize_sources")
-        assert callable(Settings.settings_customize_sources)
+        # Test that the settings_customise_sources method exists and is callable
+        assert hasattr(Settings, "settings_customise_sources")
+        assert callable(Settings.settings_customise_sources)
 
         # Test that the method returns the expected structure when called directly
-        result = Settings.settings_customize_sources(Settings, None, None, None, None)
+        result = Settings.settings_customise_sources(Settings, None, None, None, None)
         # Should return a tuple (either with TOML source or empty)
         assert isinstance(result, tuple)
 

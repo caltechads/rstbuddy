@@ -52,7 +52,7 @@ class Settings(BaseSettings):
         frozen=True,
     )
     app_version: str = Field(
-        default="0.2.1", description="Application version", frozen=True
+        default="0.1.0", description="Application version", frozen=True
     )
 
     # Write-able settings
@@ -105,13 +105,13 @@ class Settings(BaseSettings):
     log_file: str | None = Field(default=None, description="Log file path")
 
     @classmethod
-    def settings_customize_sources(
+    def settings_customise_sources(
         cls,
         settings_cls: type[BaseSettings],
-        init_settings: PydanticBaseSettingsSource,  # noqa: ARG003
-        env_settings: PydanticBaseSettingsSource,  # noqa: ARG003
-        dotenv_settings: PydanticBaseSettingsSource,  # noqa: ARG003
-        file_secret_settings: PydanticBaseSettingsSource,  # noqa: ARG003
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         """
         Load settings from file with cascading configuration.
@@ -133,16 +133,16 @@ class Settings(BaseSettings):
         # Global configuration
         if os.name == "nt":  # Windows
             global_config = (
-                Path(os.environ.get("PROGRAMDATA", "C:/ProgramData")) / ".rstbuddy.toml"
+                Path(os.environ.get("PROGRAMDATA", "C:/ProgramData")) / "rstbuddy.toml"
             )
         else:  # Unix-like
-            global_config = Path("/etc/rstbuddy/.rstbuddy.toml")
+            global_config = Path("/etc/rstbuddy.toml")
 
         if global_config.exists():
             config_paths.append(global_config)
 
         # User home configuration
-        user_config = Path.home() / ".config" / ".rstbuddy.toml"
+        user_config = Path.home() / ".rstbuddy.toml"
         if user_config.exists():
             config_paths.append(user_config)
 
@@ -162,10 +162,15 @@ class Settings(BaseSettings):
         if config_paths:
             # Use the last (highest precedence) config file
             config_file_path = config_paths[-1]
-            return (TomlConfigSettingsSource(settings_cls, config_file_path),)
+            return (TomlConfigSettingsSource(settings_cls, config_file_path.resolve()),)
 
         # Fall back to environment variables and defaults
-        return cls()
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+        )
 
     def get_config_paths(self) -> list[Path]:
         """
@@ -181,12 +186,10 @@ class Settings(BaseSettings):
         # Global configuration
         if os.name == "nt":  # Windows
             global_config = (
-                Path(os.environ.get("PROGRAMDATA", "C:/ProgramData"))
-                / "rstbuddy"
-                / "config.toml"
+                Path(os.environ.get("PROGRAMDATA", "C:/ProgramData")) / "rstbuddy.toml"
             )
         else:  # Unix-like
-            global_config = Path("/etc/rstbuddy/config.toml")
+            global_config = Path("/etc/rstbuddy.toml")
 
         if global_config.exists():
             paths.append(global_config)
@@ -212,7 +215,7 @@ class Settings(BaseSettings):
 
         """
         # Validate output format
-        if self.default_output_format not in ["table", "json", "csv", "text"]:
+        if self.default_output_format not in ["table", "json", "text"]:
             msg = f"Invalid output format: {self.default_output_format}"
             raise ConfigurationError(msg)
 

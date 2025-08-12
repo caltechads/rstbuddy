@@ -59,7 +59,7 @@ class TestCLISettings:
     def test_settings_command_with_config_file(self, runner, temp_dir):
         """Test the settings command with custom config file."""
         config_file = temp_dir / "test_config.toml"
-        config_file.write_text("[test]\nkey = 'value'", encoding="utf-8")
+        config_file.write_text("openai_api_key = 'sk-value'", encoding="utf-8")
 
         result = runner.invoke(cli, ["--config-file", str(config_file), "settings"])
         assert result.exit_code == 0

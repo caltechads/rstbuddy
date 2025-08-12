@@ -45,7 +45,7 @@ def cli(
 
     if config_file:
         # This will be picked up by the Settings class's
-        # settings_customize_sources method
+        # settings_customise_sources method
         os.environ["RSTBUDDY_CONFIG_FILE"] = config_file
 
     # Load settings
