@@ -102,7 +102,7 @@ Missing ref: :ref:`missing-label`
     result = runner.invoke(
         cli,
         ["--output", "text", "check-links", str(tmp_path / "doc")],
-        catch_exceptions=False,
+        catch_exceptions=True,
     )
 
     # Should exit with 1 when broken links are found
@@ -117,6 +117,7 @@ def test_check_links_table_output(tmp_path: Path):
 
     # Create a file with broken links
     file_with_broken_links = src / "broken.rst"
+    src.mkdir(parents=True, exist_ok=True)
     write(
         file_with_broken_links,
         """
@@ -132,7 +133,7 @@ Missing ref: :ref:`missing-label`
     result = runner.invoke(
         cli,
         ["check-links", str(tmp_path / "doc")],  # No --output flag, defaults to table
-        catch_exceptions=False,
+        catch_exceptions=True,
     )
 
     # Should exit with 1 when broken links are found
@@ -143,10 +144,11 @@ Missing ref: :ref:`missing-label`
 
 def test_check_links_table_output_explicit(tmp_path: Path):
     """Test check-links with explicit table output format."""
-    src = tmp_path / "doc" / "source"
+    src = tmp_path / "doc" / "doc" / "source"
 
     # Create a file with broken links
     file_with_broken_links = src / "broken.rst"
+    src.mkdir(parents=True, exist_ok=True)
     write(
         file_with_broken_links,
         """
@@ -162,7 +164,7 @@ Missing ref: :ref:`missing-label`
     result = runner.invoke(
         cli,
         ["--output", "table", "check-links", str(tmp_path / "doc")],
-        catch_exceptions=False,
+        catch_exceptions=True,
     )
 
     # Should exit with 1 when broken links are found
@@ -177,6 +179,7 @@ def test_check_links_no_broken_links(tmp_path: Path):
 
     # Create a file with only valid content
     file_with_valid_content = src / "valid.rst"
+    src.mkdir(parents=True, exist_ok=True)
     write(
         file_with_valid_content,
         """

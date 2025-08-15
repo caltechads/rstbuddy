@@ -244,6 +244,37 @@ class TestRSTCleanerExtended:
         assert "Content after list" in cleaned
         assert report.lists_spaced >= 1
 
+    def test_sublist_blank_line_handling(self):
+        """Test that sublists get proper blank lines before and after them."""
+        cleaner = RSTCleaner()
+
+        # Test case 1: Sublist without blank lines
+        text = "- item 1\n    - subitem 1\n    - subitem 2\n- item 2"
+        cleaned, report = cleaner.clean_text(text)
+
+        # Should have blank lines around sublist
+        assert "- item 1\n\n    - subitem 1\n    - subitem 2\n\n- item 2" in cleaned
+
+        # Test case 2: Sublist at end of main list
+        text = "- item 1\n    - subitem 1\n    - subitem 2\nNew paragraph text"
+        cleaned, report = cleaner.clean_text(text)
+
+        # Should have blank lines around sublist, including after
+        assert (
+            "- item 1\n\n    - subitem 1\n    - subitem 2\n\nNew paragraph text"
+            in cleaned
+        )
+
+        # Test case 3: Multiple sublists
+        text = "- item 1\n    - subitem 1\n    - subitem 2\n- item 2\n    - subitem 3"
+        cleaned, report = cleaner.clean_text(text)
+
+        # Should have blank lines around each sublist
+        assert (
+            "- item 1\n\n    - subitem 1\n    - subitem 2\n\n- item 2\n\n    - subitem 3"
+            in cleaned
+        )
+
     def test_is_list_item_line(self):
         """Test list item line detection."""
         cleaner = RSTCleaner()
@@ -253,7 +284,8 @@ class TestRSTCleanerExtended:
         assert cleaner._is_list_item_line("* item")  # noqa: SLF001
         assert cleaner._is_list_item_line("+ item")  # noqa: SLF001
         assert cleaner._is_list_item_line("1. item")  # noqa: SLF001
-        # The regex pattern is: r"^(?:\s*)(?:\d+\.|[a-zA-Z]\)|[ivxlcdmIVXLCDM]+\))\s+"
+        assert cleaner._is_list_item_line("#. item")  # noqa: SLF001
+        # The regex pattern is: r"^(?:\s*)(?:\d+\.|#\.|[a-zA-Z]\)|[ivxlcdmIVXLCDM]+\))\s+"
         # So "1) item" should not match - only "1. item" matches
         assert not cleaner._is_list_item_line("1) item")  # noqa: SLF001
         assert cleaner._is_list_item_line("  - indented item")  # noqa: SLF001

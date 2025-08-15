@@ -34,8 +34,10 @@ def _heading_char_for_level(level: int) -> str:
 
 #: Supported bullet prefixes treated as list items.
 _LIST_BULLETS = ("- ", "* ", "+ ")
-#: Regex for detecting numbered list markers (1., a), i), etc.).
-_LIST_NUM_PATTERN = re.compile(r"^(?:\s*)(?:\d+\.|[a-zA-Z]\)|[ivxlcdmIVXLCDM]+\))\s+")
+#: Regex for detecting numbered list markers (1., a), i), #., etc.).
+_LIST_NUM_PATTERN = re.compile(
+    r"^(?:\s*)(?:\d+\.|#\.|[a-zA-Z]\)|[ivxlcdmIVXLCDM]+\))\s+"
+)
 
 #: Regex for a fenced code block opening line, optionally with a language.
 _FENCE_OPEN_PATTERN = re.compile(r"^\s*```(?P<lang>[A-Za-z0-9_+-]+)?\s*$")
@@ -200,7 +202,7 @@ class RSTCleaner:
                 continue
             line = lines[i]
             m = re.match(r"^(\s*)(#{1,12})\s*(.+?)\s*#*\s*$", line)
-            if m:
+            if m and not line.lstrip().startswith("#."):
                 indent, hashes, title = m.groups()
                 level = len(hashes)
                 underline_char = _heading_char_for_level(level)
@@ -481,9 +483,10 @@ class RSTCleaner:
     def _ensure_blank_line_after_lists(self, lines: list[str]) -> tuple[list[str], int]:
         """
         Ensure there is exactly one blank line following a list block.
+        Also ensures sublists have blank lines before and after them.
 
         The detection is conservative and considers continuation lines and
-        indentation.
+        indentation. Sublists are detected by indentation of 2-4 spaces.
 
         Args:
             lines: Input lines
@@ -516,7 +519,41 @@ class RSTCleaner:
                 i = j
                 continue
             i += 1
-        return out, inserted
+
+        # Now process the output to handle sublist blank lines
+        final_out: list[str] = []
+        i = 0
+        while i < len(out):
+            line = out[i]
+            final_out.append(line)
+
+            # Check if this line starts a sublist (indented list item)
+            if self._is_list_item_line(line) and line.startswith(" "):
+                # Check if we need a blank line before the sublist
+                if len(final_out) > 1 and final_out[-2].strip() != "":
+                    # Insert blank line before sublist
+                    final_out.insert(-1, "")
+                    inserted += 1
+
+                # Find the end of the sublist
+                j = i + 1
+                while j < len(out) and (
+                    self._is_list_item_line(out[j]) and out[j].startswith(" ")
+                ):
+                    final_out.append(out[j])
+                    j += 1
+
+                # Check if we need a blank line after the sublist
+                if j < len(out) and out[j].strip() != "":
+                    # Insert blank line after sublist
+                    final_out.append("")
+                    inserted += 1
+
+                i = j
+                continue
+            i += 1
+
+        return final_out, inserted
 
     def _is_list_item_line(self, line: str) -> bool:
         """
