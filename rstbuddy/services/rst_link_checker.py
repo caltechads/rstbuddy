@@ -152,7 +152,7 @@ class RSTLinkChecker:
             Mapping from label to the path of the file that declares it.
 
         """
-        label_re = re.compile(r"^\s*\.\.\s+_([A-Za-z0-9_.-]+):\s*$")
+        label_re = re.compile(r"^\s*\.\.\s+_([A-Za-z0-9\s_.-]+):\s*$")
         labels: dict[str, Path] = {}
         for p in files:
             try:
