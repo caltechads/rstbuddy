@@ -341,3 +341,369 @@ Title
     assert "https://definitely.invalid.tld/thumb.png" in links
     assert "nonexistent/local/file.py" in links
     assert "missing/image.png" in links
+
+
+def test_check_links_custom_labels_valid(tmp_path: Path):
+    """Test that custom label definitions with invalid URLs are reported as broken links."""
+    src = tmp_path / "doc" / "source"
+
+    # File with custom label definitions
+    file_with_definitions = src / "definitions.rst"
+    write(
+        file_with_definitions,
+        """
+.. My Label: https://invalid.example.com/page1
+.. Another Label: https://invalid.example.org/page2
+.. Label with Spaces: https://invalid.test.com/page3
+.. Label-With-Dashes: https://invalid.demo.net/page4
+.. Label_With_Underscores: https://invalid.sample.io/page5
+
+Content here.
+""".lstrip(),
+    )
+
+    # File with valid custom label references
+    file_with_references = src / "references.rst"
+    write(
+        file_with_references,
+        """
+Title
+=====
+
+Valid references:
+- `My Label`_
+- `Another Label`_
+- `Label with Spaces`_
+- `Label-With-Dashes`_
+- `Label_With_Underscores`_
+
+Content here.
+""".lstrip(),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "--output",
+            "json",
+            "check-links",
+            "--timeout",
+            "5",
+            "--max-workers",
+            "1",
+            str(tmp_path / "doc"),
+        ],
+    )
+
+    # Should fail validation because the URLs in custom label definitions are invalid
+    assert result.exit_code != 0
+
+    # Parse the output to verify the broken links
+    data = json.loads(result.output)
+
+    # Should have entries for the invalid URLs
+    invalid_urls_found = False
+    for items in data.values():
+        for item in items:
+            if (
+                "invalid.example.com" in item["link"]
+                or "invalid.example.org" in item["link"]
+            ):
+                invalid_urls_found = True
+                break
+        if invalid_urls_found:
+            break
+
+    assert invalid_urls_found, (
+        "Invalid URLs in custom label definitions should be reported as broken links"
+    )
+
+
+def test_check_links_custom_labels_missing(tmp_path: Path):
+    """Test that missing custom label definitions are reported as broken links."""
+    src = tmp_path / "doc" / "source"
+
+    # File with custom label definitions (missing some)
+    file_with_definitions = src / "definitions.rst"
+    write(
+        file_with_definitions,
+        """
+.. My Label: https://invalid.example.com/page1
+.. Another Label: https://invalid.example.org/page2
+
+Content here.
+""".lstrip(),
+    )
+
+    # File with some missing custom label references
+    file_with_references = src / "references.rst"
+    write(
+        file_with_references,
+        """
+Title
+=====
+
+Valid references:
+- `My Label`_
+- `Another Label`_
+
+Missing references:
+- `Missing Label`_
+- `Another Missing Label`_
+
+Content here.
+""".lstrip(),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "--output",
+            "json",
+            "check-links",
+            "--timeout",
+            "5",
+            "--max-workers",
+            "1",
+            str(tmp_path / "doc"),
+        ],
+    )
+
+    # Should fail validation (broken links found)
+    assert result.exit_code != 0
+
+    data = json.loads(result.output)
+
+    # Should have entries for the missing labels
+    missing_labels_found = False
+    for items in data.values():
+        for item in items:
+            if (
+                "Missing Label" in item["link"]
+                or "Another Missing Label" in item["link"]
+            ):
+                missing_labels_found = True
+                break
+        if missing_labels_found:
+            break
+
+    assert missing_labels_found, (
+        "Missing custom labels should be reported as broken links"
+    )
+
+
+def test_check_links_custom_labels_case_sensitive(tmp_path: Path):
+    """Test that custom label matching is case-sensitive."""
+    src = tmp_path / "doc" / "source"
+
+    # File with custom label definition (lowercase)
+    file_with_definitions = src / "definitions.rst"
+    write(
+        file_with_definitions,
+        """
+.. my label: https://invalid.example.com/page1
+
+Content here.
+""".lstrip(),
+    )
+
+    # File with case-mismatched custom label reference (uppercase)
+    file_with_references = src / "references.rst"
+    write(
+        file_with_references,
+        """
+Title
+=====
+
+Case-mismatched reference:
+- `My Label`_
+
+Content here.
+""".lstrip(),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "--output",
+            "json",
+            "check-links",
+            "--timeout",
+            "5",
+            "--max-workers",
+            "1",
+            str(tmp_path / "doc"),
+        ],
+    )
+
+    # Should fail validation (case-sensitive matching)
+    assert result.exit_code != 0
+
+    data = json.loads(result.output)
+
+    # Should have entry for the case-mismatched label
+    case_mismatch_found = False
+    for items in data.values():
+        for item in items:
+            if "My Label" in item["link"]:
+                case_mismatch_found = True
+                break
+        if case_mismatch_found:
+            break
+
+    assert case_mismatch_found, (
+        "Case-mismatched custom labels should be reported as broken links"
+    )
+
+
+def test_check_links_custom_labels_ignored_in_code_blocks(tmp_path: Path):
+    """Test that custom label references inside code blocks are ignored."""
+    src = tmp_path / "doc" / "source"
+
+    # File with custom label definition
+    file_with_definitions = src / "definitions.rst"
+    write(
+        file_with_definitions,
+        """
+.. My Label: https://invalid.example.com/page1
+
+Content here.
+""".lstrip(),
+    )
+
+    # File with custom label reference inside code block
+    file_with_references = src / "references.rst"
+    write(
+        file_with_references,
+        """
+Title
+=====
+
+Valid reference:
+- `My Label`_
+
+Code block with ignored reference:
+.. code-block:: rst
+
+   This is a code block with `My Label`_ that should be ignored
+
+Content here.
+""".lstrip(),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "--output",
+            "json",
+            "check-links",
+            "--timeout",
+            "5",
+            "--max-workers",
+            "1",
+            str(tmp_path / "doc"),
+        ],
+    )
+
+    # Should fail validation because the URL in the custom label definition is invalid
+    assert result.exit_code != 0
+
+    # Parse the output to verify the broken link
+    data = json.loads(result.output)
+
+    # Should have entry for the invalid URL
+    invalid_url_found = False
+    for items in data.values():
+        for item in items:
+            if "invalid.example.com" in item["link"]:
+                invalid_url_found = True
+                break
+        if invalid_url_found:
+            break
+
+    assert invalid_url_found, (
+        "Invalid URL in custom label definition should be reported as broken link"
+    )
+
+
+def test_check_links_custom_labels_mixed_with_other_links(tmp_path: Path):
+    """Test that custom label checking works alongside other link types."""
+    src = tmp_path / "doc" / "source"
+
+    # File with various definitions
+    file_with_definitions = src / "definitions.rst"
+    write(
+        file_with_definitions,
+        """
+.. _good-label:
+
+.. My Label: https://invalid.example.com/page1
+
+Section
+=======
+
+Content here.
+""".lstrip(),
+    )
+
+    # File with mixed link types
+    file_with_references = src / "references.rst"
+    write(
+        file_with_references,
+        """
+Title
+=====
+
+External link: https://example.invalid.domain.tld/this-should-fail
+
+Ref good: :ref:`good-label`
+Ref bad: :ref:`missing-label`
+
+Custom label good: `My Label`_
+Custom label bad: `Missing Label`_
+
+Content here.
+""".lstrip(),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "--output",
+            "json",
+            "check-links",
+            "--timeout",
+            "5",
+            "--max-workers",
+            "1",
+            str(tmp_path / "doc"),
+        ],
+    )
+
+    # Should fail validation (broken links found)
+    assert result.exit_code != 0
+
+    data = json.loads(result.output)
+
+    # Should have entries for various broken link types
+    broken_external = False
+    broken_ref = False
+    broken_custom = False
+
+    for items in data.values():
+        for item in items:
+            if "example.invalid.domain.tld" in item["link"]:
+                broken_external = True
+            elif "missing-label" in item["link"]:
+                broken_ref = True
+            elif "Missing Label" in item["link"]:
+                broken_custom = True
+
+    assert broken_external, "Broken external link should be reported"
+    assert broken_ref, "Broken :ref: link should be reported"
+    assert broken_custom, "Broken custom label should be reported"

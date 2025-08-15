@@ -3,13 +3,15 @@ RST link checking service.
 
 This module provides `RSTLinkChecker`, a focused scanner that walks a given
 documentation root to find and validate hyperlinks within reStructuredText
-(`.rst`) files. It validates three kinds of links:
+(`.rst`) files. It validates four kinds of links:
 
 - External HTTP(S) links (with concurrent checks and optional robots.txt
   annotation)
 - Sphinx `:ref:` roles (against explicit label targets declared as ``.. _label:``)
 - Sphinx `:doc:` roles (resolving absolute paths relative to ``doc/source`` and
   relative paths from the current file, with a fallback to ``doc/source``)
+- Custom label references in the format `Label`_ (against explicit label definitions
+  declared as ``.. Label: URL``)
 
 The scanner intentionally ignores links that appear inside fenced code blocks
 and the content of code-like directives (e.g., ``.. code-block::``), while
@@ -24,6 +26,7 @@ import os
 import re
 import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib import robotparser
@@ -71,6 +74,28 @@ ADMONITION_DIRECTIVES = {
 }
 
 
+@dataclass
+class LabelDefinition:
+    """
+    Represents a custom label definition in the format ".. Label: URL".
+
+    Attributes:
+        label: The label name (e.g., "My Label")
+        url: The URL associated with the label
+        file_path: Absolute path to the source ``.rst`` file containing the definition.
+        line_number: 1-based line number where the definition was found.
+    """
+
+    #: The label name (e.g., "My Label")
+    label: str
+    #: The URL associated with the label
+    url: str
+    #: Absolute path to the source ``.rst`` file containing the definition.
+    file_path: Path
+    #: 1-based line number where the definition was found.
+    line_number: int
+
+
 class RSTLinkChecker:
     """
     Scan RST files for hyperlinks and validate them.
@@ -78,7 +103,7 @@ class RSTLinkChecker:
     - External http(s) links
     - :ref: labels: checked against explicit ``.. _label:`` indexes
     - :doc: targets: resolved relative to a root or file and checked for existence
-
+    - Custom label references: checked against explicit ``.. Label: URL`` definitions
     """
 
     def __init__(self, root: Path) -> None:
@@ -156,35 +181,87 @@ class RSTLinkChecker:
                     labels[m.group(1)] = p
         return labels
 
+    def build_custom_label_index(self, files: list[Path]) -> dict[str, LabelDefinition]:
+        """
+        Build an index of custom label definitions in the format ".. Label: URL".
+
+        The index maps label names to their definitions. Labels discovered inside
+        fenced code blocks are ignored.
+
+        Args:
+            files: List of files to scan.
+
+        Returns:
+            Mapping from label to the LabelDefinition object.
+        """
+        # Regex to match ".. Label: URL" format
+        # Allows spaces in label names and captures the URL
+        custom_label_re = re.compile(
+            r"^\s*\.\.\s+([A-Za-z0-9\s_-]+):\s*(https?://[^\s]+)\s*$"
+        )
+        labels: dict[str, LabelDefinition] = {}
+
+        for p in files:
+            try:
+                text = p.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            lines = text.splitlines()
+            in_fence = False
+            for idx, line in enumerate(lines, start=1):
+                if _FENCE_OPEN_PATTERN.match(line):
+                    in_fence = True
+                    continue
+                if in_fence and _FENCE_LINE_PATTERN.match(line):
+                    in_fence = False
+                    continue
+                if in_fence:
+                    continue
+
+                m = custom_label_re.match(line)
+                if m:
+                    label = m.group(1).strip()
+                    url = m.group(2).strip()
+                    labels[label] = LabelDefinition(
+                        label=label, url=url, file_path=p, line_number=idx
+                    )
+        return labels
+
     # ---- Collection
     def collect_occurrences(  # noqa: PLR0912, PLR0915
         self, p: Path
-    ) -> tuple[list[LinkOccurrence], list[LinkOccurrence], list[LinkOccurrence]]:
+    ) -> tuple[
+        list[LinkOccurrence],
+        list[LinkOccurrence],
+        list[LinkOccurrence],
+        list[LinkOccurrence],
+    ]:
         """
         Collect link occurrences in a file.
 
-        This scans the file line-by-line and returns three lists of occurrences:
-        external HTTP(S) links, ``:ref:`` roles, and ``:doc:`` roles. Links
-        found within fenced code blocks are ignored, as are links inside
-        code-like directive content. Admonitions are included.
+        This scans the file line-by-line and returns four lists of occurrences:
+        external HTTP(S) links, ``:ref:`` roles, ``:doc:`` roles, and custom label
+        references. Links found within fenced code blocks are ignored, as are links
+        inside code-like directive content. Admonitions are included.
 
         Args:
             p: Path to the file to scan.
 
         Returns:
-            A tuple of (external_links, ref_roles, doc_roles), each a list of
+            A tuple of (external_links, ref_roles, doc_roles, custom_labels), each a list of
             ``LinkOccurrence`` items with file, line number, and raw link text.
 
         """
         try:
             text = p.read_text(encoding="utf-8")
         except OSError:
-            return [], [], []
+            return [], [], [], []
 
         lines = text.splitlines()
         occurrences_http: list[LinkOccurrence] = []
         occurrences_ref: list[LinkOccurrence] = []
         occurrences_doc: list[LinkOccurrence] = []
+        occurrences_custom: list[LinkOccurrence] = []
 
         in_fence = False
         in_directive: str | None = None
@@ -286,7 +363,15 @@ class RSTLinkChecker:
                     LinkOccurrence(file_path=p, line_number=idx, link_text=full)
                 )
 
-        return occurrences_http, occurrences_ref, occurrences_doc
+            # Collect custom label references in the format `Label`_
+            # This regex matches `Label`_ where Label can contain spaces and alphanumeric characters
+            for m in re.finditer(r"`([A-Za-z0-9\s_-]+)`_", line):
+                full = m.group(0)
+                occurrences_custom.append(
+                    LinkOccurrence(file_path=p, line_number=idx, link_text=full)
+                )
+
+        return occurrences_http, occurrences_ref, occurrences_doc, occurrences_custom
 
     # ---- Validation helpers
     def _should_skip_domain(self, url: str) -> bool:
@@ -345,6 +430,24 @@ class RSTLinkChecker:
         m = re.match(r"^:doc:`\s*([^`<>]+?)\s*<\s*([^`<>]+?)\s*>\s*`$", doc_markup)
         if m:
             return m.group(2).strip()
+        return None
+
+    def _extract_custom_label(self, custom_markup: str) -> str | None:
+        """
+        Extract the target label from a custom label reference.
+
+        Supports the format `Label`_ where Label can contain spaces and alphanumeric characters.
+
+        Args:
+            custom_markup: The full markup including backticks and underscore.
+
+        Returns:
+            The label string if parsable, otherwise ``None``.
+        """
+        # `Label`_ format
+        m = re.match(r"^`([A-Za-z0-9\s_-]+)`_$", custom_markup)
+        if m:
+            return m.group(1).strip()
         return None
 
     def _extract_directive_links(self, line: str, directive_name: str) -> list[str]:
@@ -469,16 +572,19 @@ class RSTLinkChecker:
         """
         files = self.scan_rst_files()
         label_index = self.build_label_index(files)
+        custom_label_index = self.build_custom_label_index(files)
 
         all_http: list[LinkOccurrence] = []
         all_ref: list[LinkOccurrence] = []
         all_doc: list[LinkOccurrence] = []
+        all_custom: list[LinkOccurrence] = []
 
         for p in files:
-            h, r, d = self.collect_occurrences(p)
+            h, r, d, c = self.collect_occurrences(p)
             all_http.extend(h)
             all_ref.extend(r)
             all_doc.extend(d)
+            all_custom.extend(c)
 
         # External link validation (dedup for network requests)
         url_to_occurrences: dict[str, list[LinkOccurrence]] = {}
@@ -529,6 +635,12 @@ class RSTLinkChecker:
                 candidates = self._resolve_directive_paths(occ.file_path, target)
                 if not any(p.exists() for p in candidates):
                     broken_occurrences.append(occ)
+
+        # Custom label occurrences
+        for occ in all_custom:
+            label = self._extract_custom_label(occ.link_text)
+            if not label or label not in custom_label_index:
+                broken_occurrences.append(occ)
 
         # Sort deterministically: by file then line
         broken_occurrences.sort(key=lambda o: (str(o.file_path), o.line_number))
@@ -718,6 +830,15 @@ class RSTLinkChecker:
             """
             if not target.startswith(("http://", "https://")):
                 return 400, "Invalid URL"
+
+            # Do a quick DNS lookup first to fail fast for invalid domains
+            try:
+                parsed_url = urlparse(target)
+                socket.gethostbyname(parsed_url.netloc)
+            except socket.gaierror:
+                # DNS lookup failed - domain doesn't exist
+                return 404, f"DNS lookup failed for {parsed_url.netloc}"
+
             req = Request(target, method=method, headers=headers)  # noqa: S310
             try:
                 with urlopen(req, timeout=timeout) as resp:  # noqa: S310

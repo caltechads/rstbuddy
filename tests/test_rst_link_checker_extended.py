@@ -738,3 +738,292 @@ Content after directives.
         assert "/images/existing.png" not in broken_links
         assert "existing.py" not in broken_links
         assert "images/existing.png" not in broken_links
+
+
+class TestRSTLinkCheckerCustomLabels:
+    """Tests for the new custom label functionality."""
+
+    def test_build_custom_label_index_basic(self, tmp_path):
+        """Test build_custom_label_index with basic custom label definitions."""
+        checker = RSTLinkChecker(tmp_path)
+
+        # Create a test file with custom label definitions
+        test_file = tmp_path / "test.rst"
+        content = """.. My Label: https://invalid.example.com/page1
+.. Another Label: https://invalid.example.org/page2
+.. Label with Spaces: https://invalid.test.com/page3
+.. Label-With-Dashes: https://invalid.demo.net/page4
+.. Label_With_Underscores: https://invalid.sample.io/page5
+
+Content here.
+"""
+        test_file.write_text(content, encoding="utf-8")
+
+        labels = checker.build_custom_label_index([test_file])
+
+        # Should find all 5 custom label definitions
+        assert len(labels) == 5  # noqa: PLR2004
+        assert "My Label" in labels
+        assert "Another Label" in labels
+        assert "Label with Spaces" in labels
+        assert "Label-With-Dashes" in labels
+        assert "Label_With_Underscores" in labels
+
+        # Check that the LabelDefinition objects are correct
+        label_def = labels["My Label"]
+        assert label_def.label == "My Label"
+        assert label_def.url == "https://invalid.example.com/page1"
+        assert label_def.file_path == test_file
+        assert label_def.line_number == 1
+
+    def test_build_custom_label_index_ignores_fenced_blocks(self, tmp_path):
+        """Test build_custom_label_index ignores labels inside fenced code blocks."""
+        checker = RSTLinkChecker(tmp_path)
+
+        # Create a test file with labels inside and outside fenced blocks
+        test_file = tmp_path / "test.rst"
+        content = """.. Outside Label: https://invalid.example.com/outside
+
+Content here.
+
+```python
+.. Inside Label: https://invalid.example.com/inside
+```
+
+.. Another Outside Label: https://invalid.example.com/another
+
+More content.
+"""
+        test_file.write_text(content, encoding="utf-8")
+
+        labels = checker.build_custom_label_index([test_file])
+
+        # Should only find labels outside fenced blocks
+        assert "Outside Label" in labels
+        assert "Another Outside Label" in labels
+        assert "Inside Label" not in labels
+        assert len(labels) == 2  # noqa: PLR2004
+
+    def test_build_custom_label_index_case_sensitive(self, tmp_path):
+        """Test build_custom_label_index is case-sensitive."""
+        checker = RSTLinkChecker(tmp_path)
+
+        # Create a test file with case-different labels
+        test_file = tmp_path / "test.rst"
+        content = """.. My Label: https://invalid.example.com/page1
+.. my label: https://invalid.example.com/page2
+.. MY LABEL: https://invalid.example.com/page3
+
+Content here.
+"""
+        test_file.write_text(content, encoding="utf-8")
+
+        labels = checker.build_custom_label_index([test_file])
+
+        # Should find all three as separate labels
+        assert len(labels) == 3  # noqa: PLR2004
+        assert "My Label" in labels
+        assert "my label" in labels
+        assert "MY LABEL" in labels
+
+    def test_collect_occurrences_custom_labels(self, tmp_path):
+        """Test collect_occurrences collects custom label references."""
+        checker = RSTLinkChecker(tmp_path)
+
+        # Create a test file with custom label references
+        test_file = tmp_path / "test.rst"
+        content = """Title
+=====
+
+Valid references:
+- `My Label`_
+- `Another Label`_
+- `Label with Spaces`_
+- `Label-With-Dashes`_
+- `Label_With_Underscores`_
+
+Content here.
+"""
+        test_file.write_text(content, encoding="utf-8")
+
+        http, ref, doc, custom = checker.collect_occurrences(test_file)
+
+        # Should find 5 custom label references
+        assert len(custom) == 5  # noqa: PLR2004
+        assert len(http) == 0  # no external links
+        assert len(ref) == 0  # no ref roles
+        assert len(doc) == 0  # no doc roles
+
+        # Check that all expected custom labels are found
+        custom_links = [occ.link_text for occ in custom]
+        assert "`My Label`_" in custom_links
+        assert "`Another Label`_" in custom_links
+        assert "`Label with Spaces`_" in custom_links
+        assert "`Label-With-Dashes`_" in custom_links
+        assert "`Label_With_Underscores`_" in custom_links
+
+    def test_collect_occurrences_custom_labels_ignored_in_code_blocks(self, tmp_path):
+        """Test collect_occurrences ignores custom labels inside code blocks."""
+        checker = RSTLinkChecker(tmp_path)
+
+        # Create a test file with custom label references inside and outside code blocks
+        test_file = tmp_path / "test.rst"
+        content = """Title
+=====
+
+Valid reference:
+- `My Label`_
+
+Code block with ignored reference:
+.. code-block:: rst
+
+   This is a code block with `My Label`_ that should be ignored
+
+Content here.
+"""
+        test_file.write_text(content, encoding="utf-8")
+
+        http, ref, doc, custom = checker.collect_occurrences(test_file)
+
+        # Should only find 1 custom label reference (outside code block)
+        assert len(custom) == 1
+        assert "`My Label`_" in [occ.link_text for occ in custom]
+
+    def test_extract_custom_label_basic(self, tmp_path):
+        """Test _extract_custom_label with basic formats."""
+        checker = RSTLinkChecker(tmp_path)
+
+        # Test basic format
+        result = checker._extract_custom_label("`My Label`_")
+        assert result == "My Label"
+
+        # Test with extra whitespace
+        result = checker._extract_custom_label("  `  My Label  `_  ")
+        assert result == "My Label"
+
+        # Test with dashes and underscores
+        result = checker._extract_custom_label("`Label-With-Dashes`_")
+        assert result == "Label-With-Dashes"
+
+        result = checker._extract_custom_label("`Label_With_Underscores`_")
+        assert result == "Label_With_Underscores"
+
+    def test_extract_custom_label_invalid_formats(self, tmp_path):
+        """Test _extract_custom_label with invalid formats."""
+        checker = RSTLinkChecker(tmp_path)
+
+        # Test invalid formats that should return None
+        assert (
+            checker._extract_custom_label("`My Label") is None
+        )  # missing closing backtick
+        assert (
+            checker._extract_custom_label("My Label`_") is None
+        )  # missing opening backtick
+        assert checker._extract_custom_label("`My Label`") is None  # missing underscore
+        assert checker._extract_custom_label("My Label_") is None  # missing backticks
+        assert (
+            checker._extract_custom_label("not a custom label") is None
+        )  # completely different format
+
+    def test_check_with_custom_labels(self, tmp_path):
+        """Test the main check method with custom labels."""
+        checker = RSTLinkChecker(tmp_path)
+
+        # Create a test file with custom label definitions
+        definitions_file = tmp_path / "definitions.rst"
+        definitions_content = """.. My Label: https://invalid.example.com/page1
+.. Another Label: https://invalid.example.org/page2
+
+Content here.
+"""
+        definitions_file.write_text(definitions_content, encoding="utf-8")
+
+        # Create a test file with custom label references (some missing)
+        references_file = tmp_path / "references.rst"
+        references_content = """Title
+=====
+
+Valid references:
+- `My Label`_
+- `Another Label`_
+
+Missing references:
+- `Missing Label`_
+- `Another Missing Label`_
+
+Content here.
+"""
+        references_file.write_text(references_content, encoding="utf-8")
+
+        # Run the check
+        broken = checker.check()
+
+        # Should find 2 broken custom label references
+        custom_broken = [occ for occ in broken if "Missing Label" in occ.link_text]
+        assert len(custom_broken) == 2  # noqa: PLR2004
+
+        # Check that the broken links are for the missing labels
+        broken_links = [occ.link_text for occ in custom_broken]
+        assert "`Missing Label`_" in broken_links
+        assert "`Another Missing Label`_" in broken_links
+
+        # Check that valid custom labels are not reported as broken
+        valid_custom = [
+            occ
+            for occ in broken
+            if "My Label" in occ.link_text or "Another Label" in occ.link_text
+        ]
+        assert len(valid_custom) == 0
+
+    def test_check_with_custom_labels_and_other_links(self, tmp_path):
+        """Test check method with custom labels alongside other link types."""
+        checker = RSTLinkChecker(tmp_path)
+
+        # Create a test file with various definitions
+        definitions_file = tmp_path / "definitions.rst"
+        definitions_content = """.. _good-label:
+
+.. My Label: https://invalid.example.com/page1
+
+Section
+=======
+
+Content here.
+"""
+        definitions_file.write_text(definitions_content, encoding="utf-8")
+
+        # Create a test file with mixed link types
+        references_file = tmp_path / "references.rst"
+        references_content = """Title
+=====
+
+External link: https://example.invalid.domain.tld/this-should-fail
+
+Ref good: :ref:`good-label`
+Ref bad: :ref:`missing-label`
+
+Custom label good: `My Label`_
+Custom label bad: `Missing Label`_
+
+Content here.
+"""
+        references_file.write_text(references_content, encoding="utf-8")
+
+        # Run the check
+        broken = checker.check()
+
+        # Should find various types of broken links
+        broken_links = [occ.link_text for occ in broken]
+
+        # Check for broken external link
+        assert any("example.invalid.domain.tld" in link for link in broken_links)
+
+        # Check for broken :ref: link
+        assert any("missing-label" in link for link in broken_links)
+
+        # Check for broken custom label
+        assert any("Missing Label" in link for link in broken_links)
+
+        # Check that valid links are not reported as broken
+        assert not any("good-label" in link for link in broken_links)
+        assert not any("My Label" in link for link in broken_links)

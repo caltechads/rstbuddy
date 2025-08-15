@@ -63,6 +63,8 @@ def check_links(  # noqa: PLR0913
     - External http(s) links that fail validation (non-200 or transport error)
     - :ref: roles whose labels are not defined via explicit ``.. _label:``
     - :doc: roles whose target .rst file cannot be resolved
+    - Custom label references in the format `Label`_ that don't have corresponding
+      definitions in the format ``.. Label: URL``
 
     Output format is controlled by the top-level --output option: json, table, or text.
 
