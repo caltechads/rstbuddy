@@ -4,12 +4,9 @@ Tests for the gather-links CLI command.
 
 from __future__ import annotations
 
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
-from click.testing import CliRunner
 
 from rstbuddy.cli.cli import cli
 from rstbuddy.services.gather_links import RSTLinkGatherer
@@ -310,8 +307,8 @@ Link: <https://example.com>_
 
         # Check content was updated
         content = test_file.read_text(encoding="utf-8")
-        assert "Link: Github_" in content
-        assert "Labeled: GitHub Github_" in content
+        assert "Link: `Github`_" in content
+        assert "Labeled: GitHub `Github`_" in content
 
     def test_update_conf_py(self, temp_dir):
         """Test conf.py update functionality."""

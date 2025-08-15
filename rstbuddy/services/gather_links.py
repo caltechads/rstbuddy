@@ -379,11 +379,11 @@ class RSTLinkGatherer:
         # Replace each link pattern
         for url, label in self.links.items():
             # Pattern 1: <scheme://domain/path>_
-            content = re.sub(rf"<{re.escape(url)}>_", f"{label}_", content)
+            content = re.sub(rf"<{re.escape(url)}>_", f"`{label}`_", content)
 
             # Pattern 2: Label <scheme://domain/path>_ (with optional backticks)
             content = re.sub(
-                rf"`?([^<`]+)\s+<{re.escape(url)}>`?_", rf"\1 {label}_", content
+                rf"`?([^<`]+)\s+<{re.escape(url)}>`?_", rf"\1 `{label}`_", content
             )
 
         # Write updated content
