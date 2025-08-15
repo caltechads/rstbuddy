@@ -89,7 +89,7 @@ class SummaryGenerationService:
             msg = (
                 "OpenAI API key is required for summary generation. "
                 "Set RSTBUDDY_OPENAI_API_KEY environment variable "
-                "or add openai_api_key to .cursortool.toml"
+                "or add openai_api_key to .rstbuddy.toml"
             )
             raise ConfigurationError(msg)
 

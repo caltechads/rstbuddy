@@ -1,5 +1,5 @@
 """
-Make-MDC command for CursorTool.
+Make-MDC command for rstbuddy.
 
 Implements the main RST to MDC conversion functionality.
 """

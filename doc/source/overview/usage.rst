@@ -93,7 +93,7 @@ Command Options
     Disable robots.txt checks for external links
 
 **--user-agent**
-    User-Agent string for HTTP requests and robots.txt (default: "cursortool-linkcheck/1.0")
+    User-Agent string for HTTP requests and robots.txt (default: "rstbuddy-linkcheck/1.0")
 
 What Gets Checked
 ^^^^^^^^^^^^^^^^^

@@ -26,7 +26,7 @@ This is a common issue caused by several factors:
 **User-Agent Filtering**
 
     - Some sites reject requests with certain user agents
-    - The default user agent ``cursortool-linkcheck/1.0`` may be blocked
+    - The default user agent ``rstbuddy-linkcheck/1.0`` may be blocked
     - Some sites only allow requests from major browsers
 
 **Solutions**:

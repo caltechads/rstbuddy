@@ -40,7 +40,7 @@ from .utils import console
 @click.option(
     "--user-agent",
     type=str,
-    default="cursortool-linkcheck/1.0",
+    default="rstbuddy-linkcheck/1.0",
     show_default=True,
     help="User-Agent to use for HTTP validation and robots.txt",
 )

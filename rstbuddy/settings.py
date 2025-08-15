@@ -28,9 +28,9 @@ class Settings(BaseSettings):
 
     1. CLI arguments
     2. Environment variables
-    3. Local config file (``./cursortool.toml``)
-    4. Your config file (``~/.cursortool.toml``)
-    4. Global config file (``/etc//.cursortool.toml/``)
+    3. Local config file (``./rstbuddy.toml``)
+    4. Your config file (``~/.rstbuddy.toml``)
+    4. Global config file (``/etc//.rstbuddy.toml/``)
     5. Defaults
 
     Note:
