@@ -18,6 +18,7 @@ Basic Help
 
     # Show help for specific commands
     rstbuddy check-links --help
+    rstbuddy gather-links --help
     rstbuddy fix --help
     rstbuddy summarize --help
     rstbuddy settings --help
@@ -105,7 +106,7 @@ The command validates:
 - **Directive Paths**: Include, literalinclude, download, image, figure, and thumbnail directives
 
 Example Output
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 Table output (default):
 
@@ -147,8 +148,144 @@ JSON output:
       ]
     }
 
+Gather Links Command
+--------------------
+
+The ``gather-links`` command consolidates all external hyperlinks from RST documentation into a centralized ``_links.rst`` file and replaces inline links with references.
+
+Basic Usage
+^^^^^^^^^^^
+
+Gather links from the default documentation directory:
+
+.. code-block:: bash
+
+    # Gather links from default doc/source directory
+    rstbuddy gather-links
+
+    # Gather links from specific directory
+    rstbuddy gather-links /path/to/docs
+
+    # Preview changes without making them
+    rstbuddy gather-links --dry-run
+
+    # Show detailed progress
+    rstbuddy gather-links --verbose
+
+Arguments
+^^^^^^^^^
+
+**ROOT**: Optional path to the documentation directory. If not specified, uses the :py:class:`rstbuddy.config.Settings.documentation_dir` setting.
+
+Command Options
+^^^^^^^^^^^^^^^
+
+**--dry-run**
+    Show what would be done without making changes
+
+**--verbose**
+    Show detailed progress and operations
+
+What It Does
+^^^^^^^^^^^^
+
+The command performs the following operations:
+
+1. **Link Discovery**: Recursively scans all ``.rst`` files for external hyperlinks
+2. **Label Generation**: Creates unique labels for each URL
+3. **File Creation**: Generates or updates ``_links.rst`` with consolidated links
+4. **Backup Creation**: Creates timestamped backups of files to be modified
+5. **Link Replacement**: Replaces inline links with label references
+6. **Configuration Update**: Updates ``conf.py`` with ``rst_epilog`` configuration
+
+Link Detection
+^^^^^^^^^^^^^^
+
+The command detects two types of RST hyperlinks:
+
+- **Simple links**: ``<https://example.com>`_``
+- **Labeled links**: ``Label <https://example.com>`_``
+
+Links are only processed if they:
+- Use HTTP or HTTPS schemes
+- Are not relative URLs
+- Are not anchor links (starting with #)
+- Are not in sections containing "References" (case-insensitive)
+
+Label Generation
+^^^^^^^^^^^^^^^^
+
+Labels are generated automatically for URLs without explicit labels:
+
+* **Domain-only URLs**: Convert domain to CamelCase
+
+  * ``https://github.com`` → ``GithubCom``
+  * ``https://www.python.org`` → ``PythonOrg``
+
+* **URLs with paths**: Add path components for uniqueness
+
+  * ``https://github.com/user/repo`` → ``GithubComRepo``
+  * ``https://docs.python.org/3/library/os.html`` → ``DocsPythonOrgOs``
+
+The system ensures all labels are unique within the ``_links.rst`` file.
+
+Output Files
+^^^^^^^^^^^^
+
+``_links.rst``: Contains all external hyperlinks in the format:
+``.. _Label: https://example.com``
+
+**Backup files**: Timestamped backups (``filename.YYYYMMDDHHMMSS.bak``) are created before any modifications.
+
+Example Output
+^^^^^^^^^^^^^^
+
+.. code-block:: text
+
+    Scanning RST files in /path/to/docs
+    Found 15 RST files to process
+    Discovered 8 unique external links
+    Created/updated _links.rst
+    Backed up /path/to/docs/file1.rst to /path/to/docs/file1.rst.20241201120000.bak
+    Updated /path/to/docs/file1.rst
+    Updated /path/to/docs/file2.rst
+    Updated conf.py
+    Link gathering completed successfully
+
+Best Practices
+^^^^^^^^^^^^^^
+
+* **Use dry-run first**: Always test with ``--dry-run`` before making changes
+* **Review backups**: Check that backups were created successfully
+* **Test builds**: Verify that Sphinx builds work after link consolidation
+* **Version control**: Commit the new ``_links.rst`` file to your repository
+
+Troubleshooting
+^^^^^^^^^^^^^^^
+
+Common Issues
+~~~~~~~~~~~~~
+
+**Backup failures**: The command halts if any backup operation fails. Check file permissions and disk space.
+
+**Encoding issues**: The command attempts to handle various file encodings automatically.
+
+**Large documentation sets**: Progress indicators show current operation status.
+
+**Conf.py not found**: The command warns if ``conf.py`` is missing but continues processing.
+
+Error Recovery
+~~~~~~~~~~~~~~
+
+If the process fails:
+
+1. Check the error messages for specific issues
+2. Verify file permissions and disk space
+3. Restore from backups if needed
+4. Run with ``--dry-run`` to identify problems
+
 Fix Command
-------------
+-----------
 
 The ``fix`` command cleans and fixes RST files in place.
 
@@ -223,14 +360,14 @@ The command:
 3. **Displays the summary** in a formatted output
 
 Requirements
-^^^^^^^^^^^
+^^^^^^^^^^^^
 
 - **Pandoc**: Must be installed and available in PATH
 - **OpenAI API Key**: Must be configured via settings or environment variables
 - **Internet Connection**: Required for API calls to OpenAI
 
 Example Output
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 .. code-block:: text
 
@@ -261,7 +398,7 @@ Version Command
 The ``version`` command displays version information.
 
 Basic Usage
-^^^^^^^^^^
+^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -269,7 +406,7 @@ Basic Usage
     rstbuddy version
 
 Example Output
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 .. code-block:: text
 
@@ -289,7 +426,7 @@ Settings Command
 The ``settings`` command displays current configuration settings.
 
 Basic Usage
-^^^^^^^^^^
+^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -303,7 +440,7 @@ Basic Usage
     rstbuddy --output text settings
 
 Example Output
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 Table output (default):
 
@@ -491,17 +628,20 @@ Common Issues
 ~~~~~~~~~~~~~
 
 **False Positive Broken Links**
+
     - **WAF/Cloudflare Protection**: Some websites block automated tools
     - **Rate Limiting**: Servers may temporarily block requests
     - **User-Agent Filtering**: Some sites reject certain user agents
     - **Solution**: Manually verify links that appear broken
 
 **Pandoc Not Found**
+
     - **Error**: "pandoc: command not found"
     - **Solution**: Install Pandoc from https://pandoc.org/installing.html
     - **Alternative**: Use other commands that don't require Pandoc
 
 **OpenAI API Errors**
+
     - **Rate Limiting**: API may throttle requests
     - **Authentication**: Verify API key is correct and has sufficient credits
     - **Network Issues**: Check internet connection and firewall settings
@@ -510,7 +650,7 @@ Best Practices
 --------------
 
 Output Format Selection
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Choose appropriate output formats:
 
@@ -526,7 +666,7 @@ Choose appropriate output formats:
     rstbuddy --output text settings
 
 Configuration Management
-~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use configuration files when necessary:
 
@@ -540,7 +680,7 @@ Use configuration files when necessary:
     rstbuddy check-links
 
 Link Checking Best Practices
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - **Manual Verification**: Always verify HTTP links manually if they appear broken
 - **WAF Awareness**: Be aware that Cloudflare and other WAFs may block automated tools

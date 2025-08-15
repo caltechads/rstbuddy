@@ -76,28 +76,35 @@ Configuration Options
 ^^^^^^^^^^^^^^^^^^^^^
 
 **Application Settings**
+
     - **app_name**: Application name (default: ``rstbuddy``, readonly)
     - **app_version**: Application version (default: ``0.2.2``, readonly)
 
 **Documentation Settings**
+
     - **documentation_dir**: Top-level directory for RST files to be processed (default: ``doc/source``)
 
 **OpenAI Configuration**
+
     - **openai_api_key**: OpenAI API key for AI summarization feature (default: empty string)
 
 **RST Cleaning Settings**
+
     - **clean_rst_extra_protected_regexes**: List of regex patterns; if a line matches any, rstbuddy will not modify that line (default: empty list)
 
 **RST Link Checking Settings**
+
     - **check_rst_links_skip_domains**: List of domain substrings to skip during external link validation (default: empty list)
     - **check_rst_links_extra_skip_directives**: Additional directive names whose content should be ignored when scanning links (default: empty list)
 
 **Output Settings**
+
     - **default_output_format**: Default output format - ``table``, ``json``, or ``text`` (default: ``table``)
     - **enable_colors**: Enable colored output (default: ``true``)
     - **quiet_mode**: Enable quiet mode (default: ``false``)
 
 **Logging Settings**
+
     - **log_level**: Logging level - ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR`` (default: ``INFO``)
     - **log_file**: Log file path (default: ``None``)
 
@@ -229,7 +236,7 @@ For development and testing:
     ]
 
 Production Environment
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 For production systems:
 
@@ -347,22 +354,26 @@ Common Issues
 ^^^^^^^^^^^^^
 
 **Configuration Not Loaded**
+
     - Check file permissions
     - Verify file format (TOML syntax)
     - Ensure file is in correct location
     - Check for syntax errors in TOML file
 
 **Configuration Not Valid**
+
     - Verify TOML syntax is correct
     - Check that setting names match expected values
     - Ensure boolean values are ``true``/``false``, not ``True``/``False``
 
 **Environment Variables Not Recognized**
+
     - Check variable names (must start with ``RSTBUDDY_``)
     - Restart terminal session
     - Verify variable values
 
 **Command-Line Options Override**
+
     - Command-line options take highest priority
     - Check for conflicting options
     - Use ``--help`` to see current options
@@ -401,7 +412,7 @@ Best Practices
 --------------
 
 Configuration Management
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. **Use configuration files for defaults**
 

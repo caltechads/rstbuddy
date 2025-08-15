@@ -34,6 +34,7 @@ Get Help
     # Show help for specific commands
     rstbuddy check-links --help
     rstbuddy fix --help
+    rstbuddy gather-links --help
     rstbuddy summarize --help
     rstbuddy settings --help
 
@@ -53,6 +54,20 @@ Check Links Usage
 
     # Skip robots.txt checks
     rstbuddy check-links --no-check-robots
+
+Gather Links Usage
+^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    # Gather all hyperlinks from the documentation directory, add them to
+    # <documentation_dir>/_links.rst, replace the links in the text with
+    # refereces to links in _links.rst and update conf.py to include them in the
+    # epilog.
+    rstbuddy gather-links
+
+    # Preview changes without modifying the files
+    rstbuddy gather-links --dry-run
 
 Fix RST Files Usage
 ^^^^^^^^^^^^^^^^^^^
@@ -99,7 +114,7 @@ Settings Usage
     rstbuddy --output text settings
 
 Output Formats
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -132,7 +147,7 @@ Common Workflows
 ----------------
 
 Documentation Maintenance
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
