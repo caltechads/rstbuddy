@@ -40,6 +40,18 @@ Current version is |release|.
 It provides comprehensive link validation, RST file cleaning and fixing, and optional AI-powered
 summarization capabilities.
 
+Related packages
+----------------
+
+- `restructuredtext-lint <https://pypi.org/project/restructuredtext-lint/>`_:
+   This seems to be for when you want to write your README in RestructuredText, and
+   want to ensure that PyPI will process it properly for you without errors.  So it
+   has a bunch of thing in it that we don't need or want necessarily since we're primarily concerned
+   with fixing AI assistant errors in generated or modified .rst files before uploading to
+   [readthedocs](https://readthedocs.org), but definitely check it out.  Note that
+   it is a **linter**, not a **fixer** like this package is.
+
+
 Core Features
 -------------
 
