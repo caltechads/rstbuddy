@@ -122,3 +122,4 @@ tags
 *.code-workspace
 .idea
 .vscode
+prof/
