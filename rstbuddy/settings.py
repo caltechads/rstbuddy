@@ -52,7 +52,7 @@ class Settings(BaseSettings):
         frozen=True,
     )
     app_version: str = Field(
-        default="0.2.2", description="Application version", frozen=True
+        default="0.3.0", description="Application version", frozen=True
     )
 
     # Write-able settings

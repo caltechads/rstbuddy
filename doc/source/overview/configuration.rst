@@ -78,7 +78,7 @@ Configuration Options
 **Application Settings**
 
     - **app_name**: Application name (default: ``rstbuddy``, readonly)
-    - **app_version**: Application version (default: ``0.2.2``, readonly)
+    - **app_version**: Application version (default: ``0.3.0``, readonly)
 
 **Documentation Settings**
 
