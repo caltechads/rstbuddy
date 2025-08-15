@@ -78,12 +78,6 @@ ADMONITION_DIRECTIVES = {
 class LabelDefinition:
     """
     Represents a custom label definition in the format ".. Label: URL".
-
-    Attributes:
-        label: The label name (e.g., "My Label")
-        url: The URL associated with the label
-        file_path: Absolute path to the source ``.rst`` file containing the definition.
-        line_number: 1-based line number where the definition was found.
     """
 
     #: The label name (e.g., "My Label")
@@ -193,12 +187,12 @@ class RSTLinkChecker:
 
         Returns:
             Mapping from label to the LabelDefinition object.
+
         """
         # Regex to match ".. Label: URL" format
-        # Allows spaces in label names and captures the URL
-        custom_label_re = re.compile(
-            r"^\s*\.\.\s+([A-Za-z0-9\s_-]+):\s*(https?://[^\s]+)\s*$"
-        )
+        # Allows spaces in label names and captures everything after the colon
+        # as the URL
+        custom_label_re = re.compile(r"^\s*\.\.\s+([A-Za-z0-9\s_-]+):\s*(.+)$")
         labels: dict[str, LabelDefinition] = {}
 
         for p in files:
@@ -209,13 +203,14 @@ class RSTLinkChecker:
             lines = text.splitlines()
             in_fence = False
             for idx, line in enumerate(lines, start=1):
-                if _FENCE_OPEN_PATTERN.match(line):
-                    in_fence = True
-                    continue
+                # Fenced code skip - check closing pattern first
                 if in_fence and _FENCE_LINE_PATTERN.match(line):
                     in_fence = False
+                    # Don't continue here - process this line normally
+                elif _FENCE_OPEN_PATTERN.match(line):
+                    in_fence = True
                     continue
-                if in_fence:
+                elif in_fence:
                     continue
 
                 m = custom_label_re.match(line)
@@ -248,8 +243,9 @@ class RSTLinkChecker:
             p: Path to the file to scan.
 
         Returns:
-            A tuple of (external_links, ref_roles, doc_roles, custom_labels), each a list of
-            ``LinkOccurrence`` items with file, line number, and raw link text.
+            A tuple of (external_links, ref_roles, doc_roles, custom_labels),
+            each a list of ``LinkOccurrence`` items with file, line number, and
+            raw link text.
 
         """
         try:
@@ -270,14 +266,14 @@ class RSTLinkChecker:
         directive_open_re = re.compile(r"^(\s*)\.\.\s+([A-Za-z0-9_-]+)::")
 
         for idx, line in enumerate(lines, start=1):
-            # Fenced code skip
-            if _FENCE_OPEN_PATTERN.match(line):
-                in_fence = True
-                continue
+            # Fenced code skip - check closing pattern first
             if in_fence and _FENCE_LINE_PATTERN.match(line):
                 in_fence = False
+                # Don't continue here - process this line normally
+            elif _FENCE_OPEN_PATTERN.match(line):
+                in_fence = True
                 continue
-            if in_fence:
+            elif in_fence:
                 continue
 
             # Directives: open/close tracking
@@ -364,7 +360,8 @@ class RSTLinkChecker:
                 )
 
             # Collect custom label references in the format `Label`_
-            # This regex matches `Label`_ where Label can contain spaces and alphanumeric characters
+            # This regex matches `Label`_ where Label can contain spaces and
+            # alphanumeric characters
             for m in re.finditer(r"`([A-Za-z0-9\s_-]+)`_", line):
                 full = m.group(0)
                 occurrences_custom.append(
@@ -436,16 +433,19 @@ class RSTLinkChecker:
         """
         Extract the target label from a custom label reference.
 
-        Supports the format `Label`_ where Label can contain spaces and alphanumeric characters.
+        Supports the format `Label`_ where Label can contain spaces and
+        alphanumeric characters.
 
         Args:
             custom_markup: The full markup including backticks and underscore.
 
         Returns:
             The label string if parsable, otherwise ``None``.
+
         """
-        # `Label`_ format
-        m = re.match(r"^`([A-Za-z0-9\s_-]+)`_$", custom_markup)
+        # `Label`_ format - strip whitespace first, then match
+        stripped = custom_markup.strip()
+        m = re.match(r"^`([A-Za-z0-9\s_-]+)`_$", stripped)
         if m:
             return m.group(1).strip()
         return None
@@ -552,7 +552,7 @@ class RSTLinkChecker:
         timeout: int = 5,
         max_workers: int = 8,
         check_robots: bool = True,
-        user_agent: str = "cursortool-linkcheck/1.0",
+        user_agent: str = "rstbuddy-linkcheck/1.0",
     ) -> list[LinkOccurrence]:
         """
         Perform link checking for all discovered files.
@@ -755,7 +755,7 @@ class RSTLinkChecker:
         timeout: int = 5,
         max_workers: int = 8,
         check_robots: bool = True,
-        user_agent: str = "cursortool-linkcheck/1.0",
+        user_agent: str = "rstbuddy-linkcheck/1.0",
     ) -> list[LinkStatus]:
         """
         Validate external links concurrently.
@@ -794,7 +794,7 @@ class RSTLinkChecker:
         timeout: int,
         *,
         check_robots: bool = True,
-        user_agent: str = "cursortool-linkcheck/1.0",
+        user_agent: str = "rstbuddy-linkcheck/1.0",
     ) -> LinkStatus:
         """
         Validate a single http(s) link with HEAD then GET fallback.

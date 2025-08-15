@@ -158,3 +158,19 @@ def cli_context(mock_settings, mock_console):
         "console": mock_console,
         "output": "table",
     }
+
+
+@pytest.fixture(autouse=True)
+def reset_console_state():
+    """Reset console state after each test to prevent test interference."""
+    from rstbuddy.cli.utils import console, stderr_console
+
+    # Store original state
+    original_console_quiet = getattr(console, "quiet", False)
+    original_stderr_console_quiet = getattr(stderr_console, "quiet", False)
+
+    yield
+
+    # Restore original state
+    console.quiet = original_console_quiet
+    stderr_console.quiet = original_stderr_console_quiet

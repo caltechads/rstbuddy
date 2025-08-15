@@ -102,7 +102,7 @@ Missing ref: :ref:`missing-label`
     result = runner.invoke(
         cli,
         ["--output", "text", "check-links", str(tmp_path / "doc")],
-        catch_exceptions=True,
+        catch_exceptions=False,
     )
 
     # Should exit with 1 when broken links are found
@@ -133,7 +133,7 @@ Missing ref: :ref:`missing-label`
     result = runner.invoke(
         cli,
         ["check-links", str(tmp_path / "doc")],  # No --output flag, defaults to table
-        catch_exceptions=True,
+        catch_exceptions=False,
     )
 
     # Should exit with 1 when broken links are found
@@ -164,7 +164,7 @@ Missing ref: :ref:`missing-label`
     result = runner.invoke(
         cli,
         ["--output", "table", "check-links", str(tmp_path / "doc")],
-        catch_exceptions=True,
+        catch_exceptions=False,
     )
 
     # Should exit with 1 when broken links are found
@@ -344,7 +344,9 @@ Title
 
 
 def test_check_links_custom_labels_valid(tmp_path: Path):
-    """Test that custom label definitions with invalid URLs are reported as broken links."""
+    """
+    Test that custom label definitions with invalid URLs are reported as broken links.
+    """
     src = tmp_path / "doc" / "source"
 
     # File with custom label definitions
@@ -391,7 +393,7 @@ Content here.
             "--timeout",
             "5",
             "--max-workers",
-            "1",
+            "10",
             str(tmp_path / "doc"),
         ],
     )
