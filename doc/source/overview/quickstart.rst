@@ -36,6 +36,7 @@ Get Help
     rstbuddy fix --help
     rstbuddy gather-links --help
     rstbuddy summarize --help
+    rstbuddy convert-outline --help
     rstbuddy settings --help
 
 Check Links Usage
@@ -98,6 +99,28 @@ AI Summarization Usage
 
     # Use with custom configuration
     rstbuddy --config-file ai-config.toml summarize document.rst
+
+Outline Conversion Usage
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. important::
+
+    **Pandoc Required**: This feature requires Pandoc to be installed.
+    See :doc:`/overview/installation` for Pandoc installation instructions.
+
+.. code-block:: bash
+
+    # Convert a markdown outline to RST documentation structure
+    rstbuddy convert-outline outline.md
+
+    # Convert with custom output directory
+    rstbuddy convert-outline outline.md --output-dir ./docs
+
+    # Preview what would be created without making changes
+    rstbuddy convert-outline outline.md --dry-run
+
+    # Force overwrite existing files (creates backups)
+    rstbuddy convert-outline outline.md --force
 
 Settings Usage
 ^^^^^^^^^^^^^^
@@ -173,6 +196,20 @@ Content Migration
 
     # 3. Generate summary (if AI features enabled)
     rstbuddy summarize migrated_document.rst
+
+Outline Conversion
+^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    # 1. Convert markdown outline to RST structure
+    rstbuddy convert-outline outline.md --dry-run
+
+    # 2. Review the planned structure
+    rstbuddy convert-outline outline.md
+
+    # 3. Check that all generated links work
+    rstbuddy check-links ./output_directory
 
 Quality Assurance
 ^^^^^^^^^^^^^^^^^

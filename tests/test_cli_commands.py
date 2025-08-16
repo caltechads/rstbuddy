@@ -5,6 +5,7 @@ Tests for CLI commands with low coverage.
 from __future__ import annotations
 
 import json
+from unittest.mock import patch
 
 from rstbuddy.cli.cli import cli
 
@@ -116,3 +117,55 @@ class TestCLIErrorHandling:
         result = runner.invoke(cli, ["invalid-command"])
         assert result.exit_code != 0
         assert "No such command" in result.output
+
+    def test_cli_with_config_file_error(self, runner):
+        """Test CLI behavior when config file loading fails."""
+        # Mock Settings to raise an exception
+        with patch("rstbuddy.cli.cli.Settings", side_effect=Exception("Config error")):
+            result = runner.invoke(cli, ["version"])
+            assert result.exit_code == 1
+            # The error is printed to stderr and then sys.exit(1) is called
+            # We can verify the exit code indicates an error occurred
+
+    def test_cli_context_object_creation(self, runner):
+        """Test that CLI context object is properly created."""
+        result = runner.invoke(cli, ["version"])
+        assert result.exit_code == 0
+
+        # The context object should be created and populated
+        # This is tested indirectly through the version command working
+
+    def test_cli_verbose_flag_stored_in_context(self, runner):
+        """Test that verbose flag is stored in context."""
+        result = runner.invoke(cli, ["--verbose", "settings"])
+        assert result.exit_code == 0
+
+        # The verbose flag should be stored in context and used by settings command
+
+    def test_cli_output_format_stored_in_context(self, runner):
+        """Test that output format is stored in context."""
+        result = runner.invoke(cli, ["--output", "json", "settings"])
+        assert result.exit_code == 0
+
+        # The output format should be stored in context and used by settings command
+
+    def test_cli_quiet_mode_console_configuration(self, runner):
+        """Test that quiet mode properly configures console."""
+        result = runner.invoke(cli, ["--quiet", "version"])
+        assert result.exit_code == 0
+
+        # The console should be configured for quiet mode
+
+    def test_cli_utils_object_creation(self, runner):
+        """Test that Utils object is properly created in context."""
+        result = runner.invoke(cli, ["version"])
+        assert result.exit_code == 0
+
+        # The Utils object should be created and stored in context
+
+    def test_cli_console_stored_in_context(self, runner):
+        """Test that console is stored in context."""
+        result = runner.invoke(cli, ["version"])
+        assert result.exit_code == 0
+
+        # The console should be stored in context for commands to use

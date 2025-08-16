@@ -21,6 +21,7 @@ Basic Help
     rstbuddy gather-links --help
     rstbuddy fix --help
     rstbuddy summarize --help
+    rstbuddy convert-outline --help
     rstbuddy settings --help
 
 Command Structure
@@ -284,6 +285,158 @@ If the process fails:
 3. Restore from backups if needed
 4. Run with ``--dry-run`` to identify problems
 
+Convert Outline Command
+-----------------------
+
+The ``convert-outline`` command converts a Markdown outline into a complete RST documentation structure.
+
+.. important::
+
+    **Pandoc Required**: This feature requires Pandoc to be installed.
+    See :doc:`/overview/installation` for Pandoc installation instructions.
+
+    **Outline Structure Requirements**: See :doc:`/reference/convert-outline` for the exact
+    requirements for the markdown outline structure.
+
+Basic Usage
+^^^^^^^^^^^
+
+Convert a markdown outline to RST structure:
+
+.. code-block:: bash
+
+    # Convert outline to default output directory
+    rstbuddy convert-outline outline.md
+
+    # Convert with custom output directory
+    rstbuddy convert-outline outline.md --output-dir ./docs
+
+    # Preview what would be created without making changes
+    rstbuddy convert-outline outline.md --dry-run
+
+    # Force overwrite existing files (creates backups)
+    rstbuddy convert-outline outline.md --force
+
+Arguments
+^^^^^^^^^
+
+**MARKDOWN_FILE**: Path to the markdown outline file to convert.
+
+Command Options
+^^^^^^^^^^^^^^^
+
+**--output-dir PATH**
+    Custom output directory (default: uses the :py:class:`rstbuddy.config.Settings.documentation_dir` setting)
+
+**--force**
+    Force overwrite existing files with timestamped backups
+
+**--dry-run**
+    Show what would be created without creating files
+
+What It Does
+^^^^^^^^^^^^
+
+The command performs the following operations:
+
+1. **Validation**: Validates the markdown outline structure and heading hierarchy
+2. **Parsing**: Parses the markdown to extract chapters, sections, and content
+3. **Conversion**: Converts markdown content to RST using Pandoc
+4. **File Generation**: Creates a complete RST documentation structure with:
+
+   - Top-level ``index.rst`` with table of contents
+   - Chapter directories with ``index.rst`` files
+   - Individual section files for numbered sections
+   - Proper Sphinx toctree entries
+   - Content filtering to avoid duplicate headings
+
+Outline Structure Requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The markdown file must follow this structure:
+
+- **H1**: Book title (first heading)
+- **H2**: Chapters (Prologue, Introduction, Chapter X:, Appendix X:)
+- **H3**: Sections (1.1, 2.3, D.1, etc.) - **maximum two levels only**
+
+Valid chapter headings:
+- ``Prologue``
+- ``Introduction``
+- ``Chapter 1: Title``
+- ``Chapter 2: Another Title``
+- ``Appendix A: Title``
+- ``Appendix B: Another Title``
+
+Valid section headings (two levels maximum):
+- ``1.1 First Section``
+- ``2.3 Another Section``
+- ``D.1 Appendix Section``
+
+**Invalid section headings** (will cause validation errors):
+- ``1.1.1 Deep Subsection`` (too many levels)
+- ``2.3.4.1 Very Deep`` (too many levels)
+- ``A.1.1 Deep Appendix`` (too many levels)
+
+Content headings (H3 without numbers) are treated as content within the parent chapter.
+
+Example Output
+^^^^^^^^^^^^^^
+
+.. code-block:: text
+
+    Converting outline: outline.md
+    Validating markdown structure...
+    Parsing outline structure...
+    Creating output directory: ./docs
+    Generating top-level index.rst...
+    Generating chapter files...
+    Generating section files...
+    Conversion completed successfully
+
+    Generated structure:
+    docs/
+    ├── index.rst
+    ├── chapter1/
+    │   ├── index.rst
+    │   └── first-section.rst
+    └── chapter2/
+        ├── index.rst
+        └── second-section.rst
+
+Best Practices
+^^^^^^^^^^^^^^
+
+* **Use dry-run first**: Always test with ``--dry-run`` to preview the structure
+* **Review generated files**: Check that the RST structure matches your expectations
+* **Test Sphinx builds**: Verify that the generated documentation builds correctly
+* **Backup existing content**: Use ``--force`` to create backups of existing files
+
+Troubleshooting
+^^^^^^^^^^^^^^^
+
+Common Issues
+~~~~~~~~~~~~~
+
+**Pandoc not found**: Install Pandoc from https://pandoc.org/installing.html
+
+**Invalid outline structure**: Ensure your markdown follows the required heading hierarchy
+
+**Deep nesting violations**: Section numbering is limited to two levels maximum (e.g., 1.1, not 1.1.1)
+
+**Permission errors**: Check file and directory permissions
+
+**Existing directory conflicts**: Use ``--force`` to overwrite with backups
+
+Error Recovery
+~~~~~~~~~~~~~~
+
+If the process fails:
+
+1. Check the error messages for specific validation issues
+2. Verify that Pandoc is installed and accessible
+3. Review the markdown outline structure
+4. Use ``--dry-run`` to identify problems before conversion
+
 Fix Command
 -----------
 
@@ -325,7 +478,7 @@ Example Output
     │ File           │ Headings │ MD Headings │ Lists │ Code Blocks   │
     ├─────────────────────────────────────────────────────────────────┤
     │ document.rst   │ 3        │ 5            │ 2     │ 1            │
-    └─────────────────────────────────────────────────────────────────┤
+    └─────────────────────────────────────────────────────────────────┘
 
 Summarize Command
 -----------------

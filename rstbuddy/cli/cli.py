@@ -1,58 +1,89 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import json
 import os
 import subprocess
 import sys
-from importlib.metadata import Distribution
+from pathlib import Path
 
 import click
 from rich.table import Table
-
-import rstbuddy
 
 from ..settings import Settings
 from .utils import console, create_progress, print_error, print_info, print_success
 
 
+def print_header(msg: str) -> None:
+    """Print header message."""
+    console.print(f"[bold cyan]=== {msg} ===[/bold cyan]")
+
+
+def print_warning(msg: str) -> None:
+    """Print warning message."""
+    console.print(f"[yellow]⚠[/yellow] Warning: {msg}")
+
+
+def get_package_version(package_name: str) -> str:
+    """Get package version safely."""
+    try:
+        import importlib.metadata
+
+        return importlib.metadata.version(package_name)
+    except ImportError:
+        try:
+            import pkg_resources
+
+            return pkg_resources.get_distribution(package_name).version
+        except Exception:
+            return "unknown"
+
+
 @click.group()
-@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
-@click.option("--quiet", "-q", is_flag=True, help="Suppress all output except errors")
 @click.option(
-    "--config-file", type=click.Path(exists=True), help="Custom configuration file path"
+    "--quiet",
+    is_flag=True,
+    default=False,
+    help="Suppress output (useful for scripts)",
+)
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    default=False,
+    help="Enable verbose output",
 )
 @click.option(
     "--output",
     type=click.Choice(["json", "table", "text"]),
     default="table",
-    help="Output format",
+    help="Output format for commands that support it",
+)
+@click.option(
+    "--config-file",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+    help="Path to configuration file",
 )
 @click.pass_context
 def cli(
-    ctx: click.Context, verbose: bool, quiet: bool, config_file: str | None, output: str
-):
+    ctx: click.Context,
+    quiet: bool,
+    verbose: bool,
+    output: str,
+    config_file: Path | None,
+) -> None:
     """
-    rstbuddy command line interface.
-    """  # noqa: D403
+    RSTBuddy - A tool for working with RST documentation.
+    """
     # Ensure context object exists
     ctx.ensure_object(dict)
 
-    # Store global options in context
-    ctx.obj["verbose"] = verbose
-    ctx.obj["quiet"] = quiet
-    ctx.obj["output"] = output
-    ctx.obj["config_file"] = config_file
-
-    if config_file:
-        # This will be picked up by the Settings class's
-        # settings_customise_sources method
-        os.environ["RSTBUDDY_CONFIG_FILE"] = config_file
-
-    # Load settings
+    # Load configuration
     try:
+        if config_file:
+            os.environ["RSTBUDDY_CONFIG_FILE"] = str(config_file)
         settings = Settings()
         ctx.obj["settings"] = settings
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         print_error(f"Failed to load configuration: {e}")
         sys.exit(1)
 
@@ -60,22 +91,24 @@ def cli(
     ctx.obj["console"] = console
 
     # Add utils object to context for commands that need utility functions
-    ctx.obj["utils"] = type(
-        "Utils",
-        (),
-        {
-            "print_info": print_info,
-            "print_error": print_error,
-            "print_success": print_success,
-            "print_header": lambda msg: print_info(f"=== {msg} ==="),
-            "print_warning": lambda msg: print_info(f"Warning: {msg}"),
-            "show_progress": create_progress,
-        },
-    )()
+    class Utils:
+        def __init__(self):
+            self.print_info = print_info
+            self.print_error = print_error
+            self.print_success = print_success
+            self.print_header = print_header
+            self.print_warning = print_warning
+            self.show_progress = create_progress
+
+    ctx.obj["utils"] = Utils()
 
     # Configure console based on quiet mode
     if quiet:
         console.quiet = True
+
+    # Store global options in context for commands to use
+    ctx.obj["verbose"] = verbose
+    ctx.obj["output_format"] = output
 
 
 @cli.command(name="version", help="Print some version info.")
@@ -91,12 +124,12 @@ def version(ctx: click.Context) -> None:
     table.add_column("Package", justify="left", style="cyan", no_wrap=True)
     table.add_column("Version", justify="left", style="yellow", no_wrap=True)
 
-    table.add_row("rstbuddy", str(rstbuddy.__version__))
+    table.add_row("rstbuddy", get_package_version("rstbuddy"))
     table.add_row("python", str(sys.version))
-    table.add_row("click", str(Distribution.from_name("click").version))
-    table.add_row("rich", str(Distribution.from_name("rich").version))
-    table.add_row("openai", str(Distribution.from_name("openai").version))
-    table.add_row("mdformat", str(Distribution.from_name("mdformat").version))
+    table.add_row("click", get_package_version("click"))
+    table.add_row("rich", get_package_version("rich"))
+    table.add_row("openai", get_package_version("openai"))
+    table.add_row("mdformat", get_package_version("mdformat"))
 
     # Get pandoc version
     try:
@@ -114,14 +147,29 @@ def version(ctx: click.Context) -> None:
 
 
 @cli.command("settings")
+@click.option(
+    "--output",
+    type=click.Choice(["json", "table", "text"]),
+    help="Output format (overrides global --output option)",
+)
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Enable verbose output (overrides global --verbose option)",
+)
 @click.pass_context
-def show_settings(ctx: click.Context):
+def show_settings(ctx: click.Context, output: str | None, verbose: bool):
     """
     Settings-related commands.
     """
-    output_format = ctx.obj.get("output", "table")
-    verbose = ctx.obj.get("verbose", False)
     output_console = ctx.obj.get("console", console)
+
+    # Use local options if provided, otherwise fall back to global options
+    output_format = (
+        output if output is not None else ctx.obj.get("output_format", "table")
+    )
+    is_verbose = verbose or ctx.obj.get("verbose", False)
 
     # Use settings from context if available, otherwise create new instance
     settings = ctx.obj.get("settings")
@@ -131,7 +179,7 @@ def show_settings(ctx: click.Context):
         config_file = ctx.obj.get("config_file")
 
         if config_file:
-            os.environ["RSTBUDDY_CONFIG_FILE"] = config_file
+            os.environ["RSTBUDDY_CONFIG_FILE"] = str(config_file)
         settings = Settings()
 
     if output_format == "json":
@@ -150,5 +198,5 @@ def show_settings(ctx: click.Context):
             click.echo(f"{setting_name}: {setting_value}")
             click.echo()
 
-    if verbose:
+    if is_verbose:
         print_info(f"Found {len(settings.model_dump())} settings")

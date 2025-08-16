@@ -33,6 +33,7 @@ rstbuddy
    :hidden:
 
    changelog
+   reference/convert-outline
 
 Current version is |release|.
 
@@ -71,6 +72,13 @@ rstbuddy provides the following key features:
     - **Inline Code Spans**: Convert single-backtick spans to RST inline literals
     - **List Spacing**: Ensure proper blank lines after list blocks
     - **Stray Markdown Fence Removal**: Clean up orphaned triple backticks
+
+**Outline Conversion**
+    - **Markdown to RST Structure**: Convert well-structured markdown outlines into complete RST documentation projects
+    - **Automatic File Generation**: Create chapter directories, index files, and section files with proper Sphinx toctree entries
+    - **Content Validation**: Validate outline structure and heading hierarchy before conversion
+    - **Smart Content Handling**: Distinguish between numbered sections and content headings
+    - **Pandoc Integration**: Use Pandoc for high-quality markdown-to-RST content conversion
 
 **AI-Powered Summarization** (Optional)
     - **RST to Markdown Conversion**: Convert RST files to Markdown using Pandoc

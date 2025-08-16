@@ -81,8 +81,8 @@ def check_links(  # noqa: PLR0913
     # Determine output format from CLI context settings
     output_format = "table"
     context = ctx.obj
-    if context and "output" in context:
-        output_format = context["output"]
+    if context and "output_format" in context:
+        output_format = context["output_format"]
 
     if output_format == "json":
         data = checker.render_json(broken)

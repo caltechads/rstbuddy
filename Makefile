@@ -6,11 +6,12 @@ PACKAGE = rstbuddy
 
 
 clean:
-	rm -rf *.tar.gz dist *.egg-info *.rpm
-	find . -name "*.pyc" -exec rm '{}' ';'
-	find . -name "*.pyo" -exec rm '{}' ';'
-	find . -name "*.pyd" -exec rm '{}' ';'
-	find . -name "__pycache__" -exec rm -rf '{}' ';'
+	rm -rf *.tar.gz dist *.egg-info
+	find . -name "*.pyc" -exec rm '{}' ';' 2>/dev/null
+	find . -name "*.pyo" -exec rm '{}' ';' 2>/dev/null
+	find . -name "*.pyd" -exec rm '{}' ';' 2>/dev/null
+	find ./tests -name "__pycache__" -exec rm -rf '{}' ';' 2>/dev/null
+	find ./rstbuddy -name "__pycache__" -exec rm -rf '{}' ';' 2>/dev/null
 	rm -rf .pytest_cache
 	rm -rf build
 	rm -rf dist
