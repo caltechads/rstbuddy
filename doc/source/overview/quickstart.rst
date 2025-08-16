@@ -36,7 +36,7 @@ Get Help
     rstbuddy fix --help
     rstbuddy gather-links --help
     rstbuddy summarize --help
-    rstbuddy convert-outline --help
+    rstbuddy outline-to-rst --help
     rstbuddy settings --help
 
 Check Links Usage
@@ -111,16 +111,16 @@ Outline Conversion Usage
 .. code-block:: bash
 
     # Convert a markdown outline to RST documentation structure
-    rstbuddy convert-outline outline.md
+    rstbuddy outline-to-rst outline.md
 
     # Convert with custom output directory
-    rstbuddy convert-outline outline.md --output-dir ./docs
+    rstbuddy outline-to-rst outline.md --output-dir ./docs
 
     # Preview what would be created without making changes
-    rstbuddy convert-outline outline.md --dry-run
+    rstbuddy outline-to-rst outline.md --dry-run
 
     # Force overwrite existing files (creates backups)
-    rstbuddy convert-outline outline.md --force
+    rstbuddy outline-to-rst outline.md --force
 
 Settings Usage
 ^^^^^^^^^^^^^^
@@ -203,10 +203,10 @@ Outline Conversion
 .. code-block:: bash
 
     # 1. Convert markdown outline to RST structure
-    rstbuddy convert-outline outline.md --dry-run
+    rstbuddy outline-to-rst outline.md --dry-run
 
     # 2. Review the planned structure
-    rstbuddy convert-outline outline.md
+    rstbuddy outline-to-rst outline.md
 
     # 3. Check that all generated links work
     rstbuddy check-links ./output_directory

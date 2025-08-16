@@ -16,7 +16,9 @@ from marko.block import Heading
 
 from ..exc import FileError
 from ..models.outline import ValidationError, ValidationResult
-from ..services.outline_parser import SECTION_HEADING_PATTERN
+
+#: Canonical regex pattern for section headings (two levels maximum)
+SECTION_HEADING_PATTERN = r"^(\d+\.\d+|[A-Z]\.\d+)(?!\.\d)\s+(.*)"
 
 if TYPE_CHECKING:
     from pathlib import Path

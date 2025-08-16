@@ -21,7 +21,7 @@ Basic Help
     rstbuddy gather-links --help
     rstbuddy fix --help
     rstbuddy summarize --help
-    rstbuddy convert-outline --help
+    rstbuddy outline-to-rst --help
     rstbuddy settings --help
 
 Command Structure
@@ -285,18 +285,15 @@ If the process fails:
 3. Restore from backups if needed
 4. Run with ``--dry-run`` to identify problems
 
-Convert Outline Command
+Outline to RST Command
 -----------------------
 
-The ``convert-outline`` command converts a Markdown outline into a complete RST documentation structure.
+The ``outline-to-rst`` command converts a Markdown outline into a complete RST documentation structure.
 
 .. important::
 
     **Pandoc Required**: This feature requires Pandoc to be installed.
     See :doc:`/overview/installation` for Pandoc installation instructions.
-
-    **Outline Structure Requirements**: See :doc:`/reference/convert-outline` for the exact
-    requirements for the markdown outline structure.
 
 Basic Usage
 ^^^^^^^^^^^
@@ -306,16 +303,16 @@ Convert a markdown outline to RST structure:
 .. code-block:: bash
 
     # Convert outline to default output directory
-    rstbuddy convert-outline outline.md
+    rstbuddy outline-to-rst outline.md
 
     # Convert with custom output directory
-    rstbuddy convert-outline outline.md --output-dir ./docs
+    rstbuddy outline-to-rst outline.md --output-dir ./docs
 
     # Preview what would be created without making changes
-    rstbuddy convert-outline outline.md --dry-run
+    rstbuddy outline-to-rst outline.md --dry-run
 
     # Force overwrite existing files (creates backups)
-    rstbuddy convert-outline outline.md --force
+    rstbuddy outline-to-rst outline.md --force
 
 Arguments
 ^^^^^^^^^
@@ -326,7 +323,7 @@ Command Options
 ^^^^^^^^^^^^^^^
 
 **--output-dir PATH**
-    Custom output directory (default: uses the :py:class:`rstbuddy.config.Settings.documentation_dir` setting)
+    Custom output directory (default: uses RSTBUDDY_DOCUMENTATION_DIR setting)
 
 **--force**
     Force overwrite existing files with timestamped backups
@@ -343,11 +340,10 @@ The command performs the following operations:
 2. **Parsing**: Parses the markdown to extract chapters, sections, and content
 3. **Conversion**: Converts markdown content to RST using Pandoc
 4. **File Generation**: Creates a complete RST documentation structure with:
-
-   - Top-level ``index.rst`` with table of contents
+   - Top-level ``index.rst`` with separate toctrees for chapters and appendices
    - Chapter directories with ``index.rst`` files
    - Individual section files for numbered sections
-   - Proper Sphinx toctree entries
+   - Proper Sphinx toctree entries with ``:caption: Appendices`` for appendix sections
    - Content filtering to avoid duplicate headings
 
 Outline Structure Requirements
@@ -357,7 +353,7 @@ The markdown file must follow this structure:
 
 - **H1**: Book title (first heading)
 - **H2**: Chapters (Prologue, Introduction, Chapter X:, Appendix X:)
-- **H3**: Sections (1.1, 2.3, D.1, etc.) - **maximum two levels only**
+- **H3**: Sections (1.1, 2.3.1, D.1.2, etc.)
 
 Valid chapter headings:
 - ``Prologue``
@@ -367,15 +363,10 @@ Valid chapter headings:
 - ``Appendix A: Title``
 - ``Appendix B: Another Title``
 
-Valid section headings (two levels maximum):
+Valid section headings:
 - ``1.1 First Section``
-- ``2.3 Another Section``
-- ``D.1 Appendix Section``
-
-**Invalid section headings** (will cause validation errors):
-- ``1.1.1 Deep Subsection`` (too many levels)
-- ``2.3.4.1 Very Deep`` (too many levels)
-- ``A.1.1 Deep Appendix`` (too many levels)
+- ``2.3.1 Subsection``
+- ``D.1.2 Appendix Section``
 
 Content headings (H3 without numbers) are treated as content within the parent chapter.
 
@@ -420,8 +411,6 @@ Common Issues
 **Pandoc not found**: Install Pandoc from https://pandoc.org/installing.html
 
 **Invalid outline structure**: Ensure your markdown follows the required heading hierarchy
-
-**Deep nesting violations**: Section numbering is limited to two levels maximum (e.g., 1.1, not 1.1.1)
 
 **Permission errors**: Check file and directory permissions
 

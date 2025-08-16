@@ -1,18 +1,18 @@
 Convert Outline Command Reference
 =================================
 
-This document provides detailed specifications for the ``rstbuddy convert-outline`` command,
+This document provides detailed specifications for the ``rstbuddy outline-to-rst`` command,
 including the exact markdown structure requirements, validation rules, and implementation details.
 
 Command Overview
 ----------------
 
-The ``convert-outline`` command converts a well-structured markdown outline into a complete
+The ``outline-to-rst`` command converts a well-structured markdown outline into a complete
 RST documentation project with proper Sphinx formatting, directory structure, and toctree entries.
 
 .. code-block:: bash
 
-    rstbuddy convert-outline <markdown_file> [options]
+    rstbuddy outline-to-rst <markdown_file> [options]
 
 Required Arguments
 ------------------
@@ -62,6 +62,11 @@ Example:
 
     # My Documentation Project
 
+Not recommended
+^^^^^^^^^^^^^^^
+
+- Don't use horizontal rules (``---``) in the outline at all, they confuse the parser.
+
 Chapter Headings (H2)
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -73,16 +78,16 @@ Valid Chapter Patterns
 **Prologue**
     Special chapter type for introductory content before the main chapters.
 
-    - Pattern: ``## Prologue``
+    - Pattern: ``## Prologue: Title``
     - Folder name: ``prologue``
-    - RST title: ``Prologue``
+    - RST title: ``Prologue: Title`` (prefix preserved)
 
 **Introduction**
     Special chapter type for project introduction.
 
-    - Pattern: ``## Introduction``
+    - Pattern: ``## Introduction: Title``
     - Folder name: ``introduction``
-    - RST title: ``Introduction``
+    - RST title: ``Introduction: Title`` (prefix preserved)
 
 **Numbered Chapters**
     Standard chapters with sequential numbering.
@@ -101,8 +106,8 @@ Valid Chapter Patterns
 Examples:
 .. code-block:: markdown
 
-    ## Prologue
-    ## Introduction
+    ## Prologue: Getting Started
+    ## Introduction: How to use this book
     ## Chapter 1: Getting Started
     ## Chapter 2: Advanced Features
     ## Appendix A: Configuration Reference
@@ -119,13 +124,58 @@ The following patterns are **not allowed** and will cause validation errors:
 - ``## Chapter A: Title`` (letters not allowed for numbered chapters)
 - ``## Appendix 1: Title`` (numbers not allowed for appendix chapters)
 
+Chapter-specific Content
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sections live in chapters and appendices.
+
+If you want to add content to the chapter page itself, do not use headings,
+because it will screw up the Table of Contents, interspersing your bare headings
+with the section headings.  Sphinx is very particular about how to order things
+in the table of contents, and non-section headings (of any level H3 or below)
+before Section titles (which are also H3s) will cause havoc in the top level
+Table of Contents.
+
+.. important::
+
+    The only exception to this is if you have no sections in the chapter.  In that case,
+    you can use headings in the chapter page itself.
+
+Instead, to add content at the chapter level, just do it without headings:
+
+.. code-block:: markdown
+
+    ## Chapter 1: Getting Started
+
+    This is the chapter content. This will appear in the chapter's `index.rst` file.
+
+    **Subsection of Chapter 1 that is not a heading**
+
+    - This is the subsection content. This will appear in the chapter's `index.rst` file.
+
+    ### 1.1 Installation
+
+    This is the installation **section**. This will be in its own file, `chapter1/installation.rst`.
+
+    #### Subsection of Installation
+
+    This is the subsection content. This will appear in the `chapter1/installation.rst` file.
+
+    ### 1.1 Installation
+
+    This is the installation **section**. This will be in its own file, `chapter1/installation.rst`.
+
+    #### Subsection of Installation
+
+    This is the subsection content. This will appear in the `chapter1/installation.rst` file.
+
 Section Headings (H3)
 ^^^^^^^^^^^^^^^^^^^^^
 
 Section headings appear at level 3 (### or equivalent) and can be either:
 
 1. **Numbered Sections**: Get their own RST files
-2. **Content Headings**: Treated as content within the parent chapter
+2. **Content Headings**: Treated as content within the parent chapter, if there are no numbered sections in the chapter.
 
 **Important**: Section numbering is limited to a maximum of two levels for both chapters and appendices.
 
@@ -172,6 +222,12 @@ Content Headings
 
 Content headings are H3 headings that don't follow the numbered section patterns.
 These are treated as content within the parent chapter and do not get their own files.
+
+.. important::
+
+    If you have no numbered sections in the chapter, you can use content headings.
+    **DO NOT USE THEM IF YOU HAVE SECTIONS**
+
 
 Examples:
 .. code-block:: markdown
@@ -253,7 +309,44 @@ Top-Level Files
     - Document title (from H1 heading)
     - Introduction content (between H1 and first H2)
     - Table of contents with links to all chapters
-    - Uses ``.. toctree::`` directive with ``:numbered:`` option
+    - Uses ``.. toctree::`` directive with ``:hidden:`` option
+    - Separate ``.. toctree::`` for appendices with ``:caption: Appendices``
+
+The top-level index.rst file creates a clean separation between front matter, chapters, and appendices:
+
+.. code-block:: rst
+
+    .. toctree::
+       :caption: Front Matter
+       :hidden:
+
+       prologue/index
+       introduction/index
+
+    .. toctree::
+       :caption: Chapters
+       :hidden:
+
+       chapter1/index
+       chapter2/index
+
+    .. toctree::
+       :caption: Appendices
+       :hidden:
+
+       appendixA/index
+       appendixB/index
+
+This structure provides better organization and makes it easier for readers to navigate between:
+- **Front Matter**: Introduction and Prologue sections
+- **Chapters**: Main numbered chapters
+- **Appendices**: Reference materials and additional resources
+
+**Important**: Toctree entries are only created when there are actually chapters of those types. For example:
+- A book with only chapters will have just one toctree with `:caption: Chapters`
+- A book with only front matter will have just one toctree with `:caption: Front Matter`
+- A book with only appendices will have just one toctree with `:caption: Appendices`
+- A book with all three types will have three separate toctrees
 
 Chapter Files
 ^^^^^^^^^^^^^

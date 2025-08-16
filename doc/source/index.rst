@@ -33,7 +33,7 @@ rstbuddy
    :hidden:
 
    changelog
-   reference/convert-outline
+   reference/outline-to-rst
 
 Current version is |release|.
 
